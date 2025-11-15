@@ -1,821 +1,541 @@
 <!DOCTYPE html>
-<html lang="it">
+<html lang="it" class="dark">
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>FANTACALCIO MERCATO 2025</title>
+    <title>MERCATO SVINCOLATI E SCAMBI</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <script src="https://unpkg.com/lucide@latest"></script>
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Share+Tech&display=swap" rel="stylesheet">
+    
+    <script src="config.js"></script>
+
     <style>
-        /* Reset di base */
-        * {
-            margin: 0;
-            padding: 0;
-            box-sizing: border-box;
-        }
-
         body {
-            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
-            background: linear-gradient(135deg, #1e3c72 0%, #2a5298 100%);
-            min-height: 100vh;
-            padding: 20px;
-            color: #333;
+            font-family: 'Share Tech', sans-serif;
+            transition: background-color 0.3s, color 0.3s;
         }
-
-        .container {
-            max-width: 1400px;
-            margin: 0 auto;
-            background: white;
-            border-radius: 15px;
-            box-shadow: 0 10px 40px rgba(0, 0, 0, 0.3);
-            overflow: hidden;
+        .card-shadow {
+            box-shadow: 0 4px 6px -1px rgb(0 0 0 / 0.1), 0 2px 4px -2px rgb(0 0 0 / 0.1);
         }
-
-        /* Header */
-        header {
-            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
-            color: white;
-            padding: 30px;
-            text-align: center;
-        }
-
-        header h1 {
-            font-size: 2.5em;
-            margin-bottom: 10px;
-            text-shadow: 2px 2px 4px rgba(0, 0, 0, 0.3);
-        }
-
-        header p {
-            font-size: 1.1em;
-            opacity: 0.95;
-        }
-
-        /* Tabs */
-        .tabs {
-            display: flex;
-            background: #f0f0f0;
-            border-bottom: 2px solid #ddd;
-        }
-
-        .tab-button {
-            flex: 1;
-            padding: 20px;
-            background: #f0f0f0;
-            border: none;
-            cursor: pointer;
-            font-size: 1.1em;
-            font-weight: bold;
-            transition: all 0.3s;
-            color: #555;
-        }
-
-        .tab-button:hover {
-            background: #e0e0e0;
-        }
-
-        .tab-button.active {
-            background: white;
-            color: #667eea;
-            border-bottom: 3px solid #667eea;
-        }
-
-        /* Content */
-        .content {
-            padding: 30px;
-        }
-
-        .tab-content {
-            display: none;
-        }
-
-        .tab-content.active {
-            display: block;
-            animation: fadeIn 0.3s;
-        }
-
-        @keyframes fadeIn {
-            from { opacity: 0; transform: translateY(10px); }
-            to { opacity: 1; transform: translateY(0); }
-        }
-
-        /* Info Box */
-        .info-box {
-            background: #e3f2fd;
-            border-left: 4px solid #2196F3;
-            padding: 20px;
-            margin-bottom: 25px;
-            border-radius: 5px;
-        }
-
-        .info-box h3 {
-            color: #1976D2;
-            margin-bottom: 10px;
-            font-size: 1.3em;
-        }
-
-        .info-box p {
-            line-height: 1.6;
-            color: #555;
-            margin-bottom: 8px;
-        }
-
-        /* Players Grid */
-        .players-grid {
-            display: grid;
-            grid-template-columns: repeat(auto-fill, minmax(280px, 1fr));
-            gap: 20px;
-            margin-top: 20px;
-        }
-
-        /* Player Card */
-        .player-card {
-            background: white;
-            border: 2px solid #e0e0e0;
-            border-radius: 10px;
-            padding: 20px;
-            transition: all 0.3s;
-            box-shadow: 0 2px 8px rgba(0, 0, 0, 0.1);
-        }
-
-        .player-card:hover {
-            transform: translateY(-5px);
-            box-shadow: 0 5px 20px rgba(0, 0, 0, 0.2);
-            border-color: #667eea;
-        }
-
-        .player-name {
-            font-size: 1.4em;
-            font-weight: bold;
-            color: #333;
-            margin-bottom: 10px;
-        }
-
-        .player-info {
-            margin: 8px 0;
-            color: #666;
-            display: flex;
-            align-items: center;
-        }
-
-        .player-info strong {
-            min-width: 80px;
-            color: #444;
-        }
-
-        .role-badge {
-            display: inline-block;
-            padding: 4px 12px;
-            border-radius: 15px;
-            font-size: 0.85em;
-            font-weight: bold;
-            text-transform: uppercase;
-        }
-
-        .role-p { background: #fff3e0; color: #e65100; }
-        .role-d { background: #e8f5e9; color: #2e7d32; }
-        .role-c { background: #e3f2fd; color: #1565c0; }
-        .role-a { background: #fce4ec; color: #c2185b; }
-
-        /* Offer Section */
-        .offer-section {
-            margin-top: 15px;
-            padding-top: 15px;
-            border-top: 2px solid #f0f0f0;
-        }
-
-        .offer-input {
-            width: 100%;
-            padding: 10px;
-            border: 2px solid #ddd;
-            border-radius: 5px;
-            font-size: 1em;
-            margin-bottom: 10px;
-            transition: border-color 0.3s;
-        }
-
-        .offer-input:focus {
-            outline: none;
-            border-color: #667eea;
-        }
-
-        .offer-button {
-            width: 100%;
-            padding: 12px;
-            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
-            color: white;
-            border: none;
-            border-radius: 5px;
-            font-size: 1em;
-            font-weight: bold;
-            cursor: pointer;
-            transition: all 0.3s;
-        }
-
-        .offer-button:hover {
-            transform: scale(1.02);
-            box-shadow: 0 4px 12px rgba(102, 126, 234, 0.4);
-        }
-
-        .offer-button:disabled {
-            background: #ccc;
-            cursor: not-allowed;
-            transform: none;
-        }
-
-        /* Current Offers */
-        .current-offers {
-            margin-top: 10px;
-            font-size: 0.9em;
-        }
-
-        .offer-item {
-            background: #f5f5f5;
-            padding: 8px;
-            margin: 5px 0;
-            border-radius: 5px;
-            display: flex;
-            justify-content: space-between;
-            align-items: center;
-        }
-
-        .offer-team {
-            font-weight: bold;
-            color: #667eea;
-        }
-
-        .offer-amount {
-            background: #4CAF50;
-            color: white;
-            padding: 3px 10px;
-            border-radius: 12px;
-            font-weight: bold;
-        }
-
-        /* Trades Section */
-        .trades-grid {
-            display: grid;
-            grid-template-columns: repeat(auto-fill, minmax(320px, 1fr));
-            gap: 20px;
-            margin-top: 20px;
-        }
-
-        .trade-card {
-            background: white;
-            border: 2px solid #e0e0e0;
-            border-radius: 10px;
-            padding: 20px;
-            box-shadow: 0 2px 8px rgba(0, 0, 0, 0.1);
-            transition: all 0.3s;
-        }
-
-        .trade-card:hover {
-            transform: translateY(-5px);
-            box-shadow: 0 5px 20px rgba(0, 0, 0, 0.2);
-            border-color: #667eea;
-        }
-
-        .trade-header {
-            display: flex;
-            align-items: center;
-            justify-content: space-between;
-            margin-bottom: 15px;
-            padding-bottom: 15px;
-            border-bottom: 2px solid #f0f0f0;
-        }
-
-        .trade-teams {
-            font-size: 1.1em;
-            font-weight: bold;
-            color: #333;
-        }
-
-        .trade-arrow {
-            color: #667eea;
-            font-size: 1.5em;
-            margin: 0 10px;
-        }
-
-        .trade-players {
-            display: flex;
-            justify-content: space-between;
-            gap: 15px;
-            margin-bottom: 15px;
-        }
-
-        .trade-player {
-            flex: 1;
-            background: #f9f9f9;
-            padding: 12px;
-            border-radius: 8px;
-        }
-
-        .trade-player-name {
-            font-weight: bold;
-            color: #333;
-            margin-bottom: 5px;
-        }
-
-        .trade-player-role {
-            font-size: 0.9em;
-            color: #666;
-        }
-
-        .trade-status {
-            text-align: center;
-            padding: 10px;
-            border-radius: 5px;
-            font-weight: bold;
-            margin-top: 10px;
-        }
-
-        .status-pending {
-            background: #fff3e0;
-            color: #e65100;
-        }
-
-        .status-completed {
-            background: #e8f5e9;
-            color: #2e7d32;
-        }
-
-        /* Tradable Section */
-        .tradable-grid {
-            display: grid;
-            grid-template-columns: repeat(auto-fill, minmax(280px, 1fr));
-            gap: 20px;
-            margin-top: 20px;
-        }
-
-        .tradable-card {
-            background: white;
-            border: 2px solid #e0e0e0;
-            border-radius: 10px;
-            padding: 20px;
-            transition: all 0.3s;
-            box-shadow: 0 2px 8px rgba(0, 0, 0, 0.1);
-        }
-
-        .tradable-card:hover {
-            transform: translateY(-5px);
-            box-shadow: 0 5px 20px rgba(0, 0, 0, 0.2);
-            border-color: #667eea;
-        }
-
-        .tradable-team {
-            font-size: 1.1em;
-            font-weight: bold;
-            color: #667eea;
-            margin-bottom: 10px;
-        }
-
-        .tradable-player {
-            font-size: 1.3em;
-            font-weight: bold;
-            color: #333;
-            margin-bottom: 10px;
-        }
-
-        .tradable-info {
-            margin: 8px 0;
-            color: #666;
-        }
-
-        .tradable-info strong {
-            color: #444;
-        }
-
-        /* Loading */
-        .loading {
-            text-align: center;
-            padding: 40px;
-            font-size: 1.2em;
-            color: #667eea;
-        }
-
-        .spinner {
-            border: 4px solid #f3f3f3;
-            border-top: 4px solid #667eea;
+        .loader {
+            border: 4px solid #4a5568; /* grigio scuro */
+            border-top: 4px solid #22c55e; /* verde */
             border-radius: 50%;
             width: 40px;
             height: 40px;
             animation: spin 1s linear infinite;
-            margin: 20px auto;
         }
-
         @keyframes spin {
             0% { transform: rotate(0deg); }
             100% { transform: rotate(360deg); }
         }
-
-        /* Responsive */
-        @media (max-width: 768px) {
-            header h1 {
-                font-size: 1.8em;
-            }
-
-            .tab-button {
-                padding: 15px 10px;
-                font-size: 0.9em;
-            }
-
-            .players-grid,
-            .trades-grid,
-            .tradable-grid {
-                grid-template-columns: 1fr;
-            }
-
-            .trade-players {
-                flex-direction: column;
-            }
+        .tab-btn.active {
+            border-color: #22c55e;
+            color: #22c55e;
+            background-color: rgba(34, 197, 94, 0.1);
         }
     </style>
 </head>
-<body>
-    <div class="container">
-        <header>
-            <h1>⚽ FANTACALCIO MERCATO 2025</h1>
-            <p>Gestisci le tue offerte e i tuoi scambi</p>
+<body class="antialiased bg-gray-900 text-gray-200">
+
+    <div class="container mx-auto p-4 md:p-8 max-w-7xl relative">
+
+        <header class="text-center mb-8 md:mb-12 pt-10">
+            <img src="logo25-26.png" alt="Amici di Maria" class="w-40 h-40 mx-auto mb-4 rounded-full object-cover">
+            <h1 class="text-4xl md:text-5xl font-extrabold text-white tracking-tight uppercase">MERCATO SVINCOLATI E SCAMBI</h1>
+            <p class="text-gray-400 mt-2 text-lg">Stagione 2025/2026</p>
         </header>
 
-        <div class="tabs">
-            <button class="tab-button active" onclick="switchTab('svincolati')">SVINCOLATI</button>
-            <button class="tab-button" onclick="switchTab('scambi')">SCAMBI</button>
-            <button class="tab-button" onclick="switchTab('scambiabili')">SCAMBIABILI</button>
+        <div class="mb-6 flex justify-center border-b border-gray-700">
+            <button id="tab-svincolati" class="tab-btn active font-semibold py-3 px-6 border-b-2 transition">SVINCOLATI</button>
+            <button id="tab-scambi" class="tab-btn text-gray-400 font-semibold py-3 px-6 border-b-2 border-transparent hover:text-white transition">SCAMBI</button>
         </div>
 
-        <div class="content">
-            <!-- TAB SVINCOLATI -->
-            <div id="svincolati" class="tab-content active">
-                <div class="info-box">
-                    <h3>📋 REGOLE SVINCOLATI</h3>
-                    <p><strong>IL GIOCATORE È ASSEGNATO AL MIGLIOR OFFERENTE ALLO SCADERE DELLE 24H DALLA PRIMA OFFERTA</strong></p>
-                    <p><strong>NON OFFRITE MAI PIÙ DI QUANTO AVETE</strong></p>
-                    <p>(se avete 3 crediti e fate 3 offerte da 1 quei crediti sono vincolati)</p>
+        <div class="grid grid-cols-1 lg:grid-cols-3 gap-8">
+
+            <div class="lg:col-span-1">
+                <div id="form-svincolati-container" class="bg-gray-800 p-6 rounded-2xl card-shadow sticky top-8">
+                     <h2 class="text-2xl font-bold mb-4 flex items-center text-white">
+                        <i data-lucide="gavel" class="mr-2"></i>
+                        Offerta per Svincolato
+                    </h2>
+                    <form id="svincolatiForm">
+                         <div class="mb-4">
+                            <label for="squadra_svincolati" class="block text-sm font-medium text-gray-300 mb-1">Seleziona squadra</label>
+                            <select id="squadra_svincolati" name="squadra" required class="w-full p-2 border border-gray-600 bg-gray-700 text-white rounded-md focus:ring-2 focus:ring-green-500 focus:border-green-500 transition">
+                                <option value="" disabled selected>- Seleziona -</option>
+                                <option value="Gonzi">Gonzi</option><option value="Chivas">Chivas</option><option value="Minturno">Minturno</option><option value="Califfo">Califfo</option><option value="BDS">BDS</option><option value="Diavolone">Diavolone</option><option value="RealSpillo">Real Spillo</option><option value="Pandamonio">Pandamonio</option><option value="SpaccioUno">SpaccioUno</option><option value="SantaMasterella">Santa Masterella</option>
+                            </select>
+                        </div>
+                        <div class="mb-4">
+                            <label for="nome_svincolati" class="block text-sm font-medium text-gray-300 mb-1">Giocatore (Cognome - Squadra - Ruolo)</label>
+                            <input type="text" id="nome_svincolati" name="nome" required placeholder="Es. L.Martinez - Inter - Pc" class="w-full p-2 border border-gray-600 bg-gray-700 text-white rounded-md focus:ring-2 focus:ring-green-500 focus:border-green-500 transition">
+                        </div>
+                        <div class="mb-4">
+                            <label for="offerta_svincolati" class="block text-sm font-medium text-gray-300 mb-1">Offerta (Fantamilioni)</label>
+                            <input type="number" id="offerta_svincolati" name="offerta" required min="1" placeholder="Es. 25" class="w-full p-2 border border-gray-600 bg-gray-700 text-white rounded-md focus:ring-2 focus:ring-green-500 focus:border-green-500 transition">
+                        </div>
+                        <div class="mb-6">
+                            <label for="password_svincolati" class="block text-sm font-medium text-gray-300 mb-1">Password Squadra</label>
+                            <input type="password" id="password_svincolati" name="password" required class="w-full p-2 border border-gray-600 bg-gray-700 text-white rounded-md focus:ring-2 focus:ring-green-500 focus:border-green-500 transition">
+                        </div>
+                        <button type="submit" class="w-full bg-green-600 text-white font-bold py-3 px-4 rounded-lg hover:bg-green-700 focus:outline-none focus:ring-4 focus:ring-green-500 focus:ring-opacity-50 transition-transform transform hover:scale-105">
+                            Invia Offerta
+                        </button>
+                        <div id="svincolatiFormResult" class="mt-4 text-center"></div>
+                    </form>
                 </div>
-                <div id="players-container" class="loading">
-                    <div class="spinner"></div>
-                    <p>Caricamento giocatori...</p>
+                
+                <div id="form-scambi-container" class="hidden bg-gray-800 p-6 rounded-2xl card-shadow sticky top-8">
+                    <h2 class="text-2xl font-bold mb-4 flex items-center text-white">
+                        <i data-lucide="repeat" class="mr-2"></i>
+                        Proponi uno Scambio
+                    </h2>
+                    <form id="scambiForm">
+                        <div class="mb-4">
+                            <label for="squadra_proponente" class="block text-sm font-medium text-gray-300 mb-1">La tua Squadra (che propone)</label>
+                            <select id="squadra_proponente" name="squadra_proponente" required class="w-full p-2 border border-gray-600 bg-gray-700 text-white rounded-md focus:ring-2 focus:ring-green-500 focus:border-green-500 transition">
+                                <option value="" disabled selected>- Seleziona -</option>
+                                <option value="Gonzi">Gonzi</option><option value="Chivas">Chivas</option><option value="Minturno">Minturno</option><option value="Califfo">Califfo</option><option value="BDS">BDS</option><option value="Diavolone">Diavolone</option><option value="RealSpillo">Real Spillo</option><option value="Pandamonio">Pandamonio</option><option value="SpaccioUno">SpaccioUno</option><option value="SantaMasterella">Santa Masterella</option>
+                            </select>
+                        </div>
+                         <div class="mb-4">
+                            <label for="squadra_ricevente" class="block text-sm font-medium text-gray-300 mb-1">Squadra a cui proponi</label>
+                            <select id="squadra_ricevente" name="squadra_ricevente" required class="w-full p-2 border border-gray-600 bg-gray-700 text-white rounded-md focus:ring-2 focus:ring-green-500 focus:border-green-500 transition">
+                                <option value="" disabled selected>- Seleziona -</option>
+                               <option value="Gonzi">Gonzi</option><option value="Chivas">Chivas</option><option value="Minturno">Minturno</option><option value="Califfo">Califfo</option><option value="BDS">BDS</option><option value="Diavolone">Diavolone</option><option value="RealSpillo">Real Spillo</option><option value="Pandamonio">Pandamonio</option><option value="SpaccioUno">SpaccioUno</option><option value="SantaMasterella">Santa Masterella</option>
+                            </select>
+                        </div>
+                        <div class="mb-4">
+                            <label for="giocatore_offerto" class="block text-sm font-medium text-gray-300 mb-1">Giocatore che OFFRI (Cognome - Squadra - Ruolo)</label>
+                            <input type="text" id="giocatore_offerto" name="giocatore_offerto" required placeholder="Es. L.Martinez - Inter - Pc" class="w-full p-2 border border-gray-600 bg-gray-700 text-white rounded-md focus:ring-2 focus:ring-green-500 focus:border-green-500 transition">
+                        </div>
+                        <div class="mb-4">
+                            <label for="giocatore_richiesto" class="block text-sm font-medium text-gray-300 mb-1">Giocatore che CHIEDI (Cognome - Squadra - Ruolo)</label>
+                            <input type="text" id="giocatore_richiesto" name="giocatore_richiesto" required placeholder="Es. Leao - Milan - A" class="w-full p-2 border border-gray-600 bg-gray-700 text-white rounded-md focus:ring-2 focus:ring-green-500 focus:border-green-500 transition">
+                        </div>
+                        <div class="mb-4">
+                            <label for="crediti_offerti" class="block text-sm font-medium text-gray-300 mb-1">Crediti che OFFRI (opzionale)</label>
+                            <input type="number" id="crediti_offerti" name="crediti_offerti" min="0" placeholder="Es. 10" class="w-full p-2 border border-gray-600 bg-gray-700 text-white rounded-md focus:ring-2 focus:ring-green-500 focus:border-green-500 transition">
+                        </div>
+                         <div class="mb-4">
+                            <label for="crediti_richiesti" class="block text-sm font-medium text-gray-300 mb-1">Crediti che CHIEDI (opzionale)</label>
+                            <input type="number" id="crediti_richiesti" name="crediti_richiesti" min="0" placeholder="Es. 5" class="w-full p-2 border border-gray-600 bg-gray-700 text-white rounded-md focus:ring-2 focus:ring-green-500 focus:border-green-500 transition">
+                        </div>
+                        <div class="mb-6">
+                            <label for="password_scambi" class="block text-sm font-medium text-gray-300 mb-1">Password della tua Squadra</label>
+                            <input type="password" id="password_scambi" name="password" required class="w-full p-2 border border-gray-600 bg-gray-700 text-white rounded-md focus:ring-2 focus:ring-green-500 focus:border-green-500 transition">
+                        </div>
+                        <button type="submit" class="w-full bg-blue-600 text-white font-bold py-3 px-4 rounded-lg hover:bg-blue-700 focus:outline-none focus:ring-4 focus:ring-blue-500 focus:ring-opacity-50 transition-transform transform hover:scale-105">
+                            Pubblica Proposta
+                        </button>
+                        <div id="scambiFormResult" class="mt-4 text-center"></div>
+                    </form>
                 </div>
             </div>
 
-            <!-- TAB SCAMBI -->
-            <div id="scambi" class="tab-content">
-                <div class="info-box">
-                    <h3>🔄 REGOLE SCAMBI</h3>
-                    <p><strong>LO SCAMBIO È UFFICIALE ALLO SCADERE DELLE 24H DALLA PROPOSTA</strong></p>
+            <div class="lg:col-span-2">
+                <div id="content-svincolati" class="bg-gray-800 p-6 rounded-2xl card-shadow">
+                    <h2 class="text-2xl font-bold mb-1 text-white">Aste in Corso</h2>
+                    <p class="text-sm text-red-500 font-semibold mb-4">IL GIOCATORE È ASSEGNATO AL MIGLIOR OFFERENTE ALLO SCADERE DELLE 24H DALLA PRIMA OFFERTA</p>
+                    <p class="text-sm text-red-500 font-semibold mb-4">NON OFFRITE MAI PIÙ DI QUANTO AVETE<br>(se avete 3 crediti e fate 3 offerte da 1 quei crediti sono vincolati)</p>                    
+                    <div id="auctionsContainer">
+                        <div class="flex justify-center items-center py-16"><div class="loader"></div></div>
+                    </div>
                 </div>
-                <div id="trades-container" class="loading">
-                    <div class="spinner"></div>
-                    <p>Caricamento scambi...</p>
-                </div>
-            </div>
 
-            <!-- TAB SCAMBIABILI -->
-            <div id="scambiabili" class="tab-content">
-                <div class="info-box">
-                    <h3>🔀 GIOCATORI SCAMBIABILI</h3>
-                    <p><strong>Questi giocatori sono disponibili per scambi</strong></p>
-                    <p>Contatta la squadra se sei interessato ad uno scambio</p>
-                </div>
-                <div id="tradable-container" class="loading">
-                    <div class="spinner"></div>
-                    <p>Caricamento giocatori scambiabili...</p>
+                <div id="content-scambi" class="hidden bg-gray-800 p-6 rounded-2xl card-shadow">
+                    <h2 class="text-2xl font-bold mb-1 text-white">Scambi Proposti</h2>
+                    <p class="text-sm text-blue-400 font-semibold mb-4">LO SCAMBIO È UFFICIALE ALLO SCADERE DELLE 24H DALLA PROPOSTA</p>
+                    <div id="tradesContainer">
+                        <div class="flex justify-center items-center py-16"><div class="loader"></div></div>
+                    </div>
                 </div>
             </div>
         </div>
     </div>
 
-    <script src="config.js"></script>
     <script>
-        let currentTeam = null;
-        let playersData = [];
-        let tradesData = [];
-        let tradableData = [];
+        const AUCTION_DURATION_MS = 24 * 60 * 60 * 1000;
 
-        // Switch Tab
+        // --- RIFERIMENTI DOM ---
+        const tabSvincolati = document.getElementById('tab-svincolati');
+        const tabScambi = document.getElementById('tab-scambi');
+        const formSvincolati = document.getElementById('form-svincolati-container');
+        const formScambi = document.getElementById('form-scambi-container');
+        const contentSvincolati = document.getElementById('content-svincolati');
+        const contentScambi = document.getElementById('content-scambi');
+        let activeTab = 'svincolati';
+
+        // --- GESTIONE TAB ---
+        tabSvincolati.addEventListener('click', () => switchTab('svincolati'));
+        tabScambi.addEventListener('click', () => switchTab('scambi'));
+
         function switchTab(tabName) {
-            // Hide all tabs
-            document.querySelectorAll('.tab-content').forEach(tab => {
-                tab.classList.remove('active');
-            });
-            document.querySelectorAll('.tab-button').forEach(btn => {
-                btn.classList.remove('active');
-            });
+            activeTab = tabName;
+            const isSvincolati = tabName === 'svincolati';
+            
+            tabSvincolati.classList.toggle('active', isSvincolati);
+            tabScambi.classList.toggle('active', !isSvincolati);
+            
+            formSvincolati.classList.toggle('hidden', !isSvincolati);
+            formScambi.classList.toggle('hidden', isSvincolati);
 
-            // Show selected tab
-            document.getElementById(tabName).classList.add('active');
-            event.target.classList.add('active');
-
-            // Load data for the tab if needed
-            if (tabName === 'svincolati' && playersData.length === 0) {
-                loadPlayers();
-            } else if (tabName === 'scambi' && tradesData.length === 0) {
-                loadTrades();
-            } else if (tabName === 'scambiabili' && tradableData.length === 0) {
-                loadTradable();
-            }
+            contentSvincolati.classList.toggle('hidden', !isSvincolati);
+            contentScambi.classList.toggle('hidden', isSvincolati);
+            
+            main();
         }
-
-        // Initialize
-        document.addEventListener('DOMContentLoaded', function() {
-            authenticateTeam();
-        });
-
-        function authenticateTeam() {
-            const teamName = prompt('Inserisci il nome della tua squadra:');
-            if (!teamName) {
-                alert('Devi inserire il nome della squadra!');
-                return authenticateTeam();
-            }
-
-            const password = prompt(`Inserisci la password per ${teamName}:`);
-            if (TEAM_PASSWORDS[teamName] && TEAM_PASSWORDS[teamName] === password) {
-                currentTeam = teamName;
-                alert(`Benvenuto, ${teamName}!`);
-                loadPlayers();
-            } else {
-                alert('Password errata o squadra non trovata!');
-                return authenticateTeam();
-            }
-        }
-
-        // Load Players (Svincolati)
-        async function loadPlayers() {
+        
+        // --- LOGICA GENERICA ---
+        async function fetchData(tableName) {
+            const container = activeTab === 'svincolati' ? document.getElementById('auctionsContainer') : document.getElementById('tradesContainer');
             try {
-                const response = await fetch(
-                    `https://api.airtable.com/v0/${AIRTABLE_CONFIG.baseId}/${AIRTABLE_CONFIG.tableName}`,
-                    {
-                        headers: {
-                            'Authorization': `Bearer ${AIRTABLE_CONFIG.readApiKey}`
-                        }
-                    }
-                );
-
+                const url = `https://api.airtable.com/v0/${AIRTABLE_CONFIG.baseId}/${tableName}?sort[0][field]=data&sort[0][direction]=desc`;
+                const response = await fetch(url, { headers: { Authorization: `Bearer ${AIRTABLE_CONFIG.readApiKey}` } });
+                if (!response.ok) throw new Error(`Errore di rete: ${response.statusText}`);
                 const data = await response.json();
-                playersData = data.records;
-                renderPlayers();
+                return data.records;
             } catch (error) {
-                console.error('Errore nel caricamento:', error);
-                document.getElementById('players-container').innerHTML = 
-                    '<p style="color: red;">Errore nel caricamento dei dati</p>';
+                console.error("Errore nel recupero dati:", error);
+                container.innerHTML = `<p class="text-red-500 text-center">Impossibile caricare i dati. Riprova più tardi.</p>`;
+                return [];
             }
         }
+        
+        // --- LOGICA SVINCOLATI ---
+        function processAuctions(records) {
+            const auctions = {};
+            records.forEach(record => {
+                const playerName = record.fields.nome?.trim().toLowerCase();
+                if (!playerName) return;
 
-        function renderPlayers() {
-            const container = document.getElementById('players-container');
-            
-            if (playersData.length === 0) {
-                container.innerHTML = '<p>Nessun giocatore disponibile al momento.</p>';
-                return;
-            }
-
-            container.innerHTML = '';
-            container.className = 'players-grid';
-
-            playersData.forEach(player => {
-                const fields = player.fields;
-                const card = createPlayerCard(player.id, fields);
-                container.appendChild(card);
-            });
-        }
-
-        function createPlayerCard(playerId, fields) {
-            const card = document.createElement('div');
-            card.className = 'player-card';
-
-            const roleClass = `role-${fields.ruolo?.toLowerCase() || 'p'}`;
-            
-            let offersHtml = '';
-            if (fields.offerte && Array.isArray(fields.offerte)) {
-                offersHtml = '<div class="current-offers"><strong>Offerte attuali:</strong>';
-                fields.offerte.forEach(offer => {
-                    const [team, amount] = offer.split(':');
-                    offersHtml += `
-                        <div class="offer-item">
-                            <span class="offer-team">${team}</span>
-                            <span class="offer-amount">${amount} crediti</span>
-                        </div>
-                    `;
-                });
-                offersHtml += '</div>';
-            }
-
-            card.innerHTML = `
-                <div class="player-name">${fields.nome || 'N/A'}</div>
-                <div class="player-info">
-                    <strong>Ruolo:</strong>
-                    <span class="role-badge ${roleClass}">${fields.ruolo || 'N/A'}</span>
-                </div>
-                <div class="player-info">
-                    <strong>Data:</strong> ${fields.data || 'N/A'}
-                </div>
-                ${offersHtml}
-                <div class="offer-section">
-                    <input type="number" 
-                           class="offer-input" 
-                           id="offer-${playerId}" 
-                           placeholder="Inserisci la tua offerta (crediti)"
-                           min="1">
-                    <button class="offer-button" onclick="makeOffer('${playerId}', '${fields.nome}')">
-                        Fai un'offerta
-                    </button>
-                </div>
-            `;
-
-            return card;
-        }
-
-        async function makeOffer(playerId, playerName) {
-            const offerInput = document.getElementById(`offer-${playerId}`);
-            const offerAmount = parseInt(offerInput.value);
-
-            if (!offerAmount || offerAmount < 1) {
-                alert('Inserisci un\'offerta valida!');
-                return;
-            }
-
-            if (!confirm(`Confermi l'offerta di ${offerAmount} crediti per ${playerName}?`)) {
-                return;
-            }
-
-            try {
-                const player = playersData.find(p => p.id === playerId);
-                const currentOffers = player.fields.offerte || [];
-                const newOffer = `${currentTeam}:${offerAmount}`;
-                
-                const updatedOffers = [...currentOffers, newOffer];
-
-                const response = await fetch(
-                    `https://api.airtable.com/v0/${AIRTABLE_CONFIG.baseId}/${AIRTABLE_CONFIG.tableName}/${playerId}`,
-                    {
-                        method: 'PATCH',
-                        headers: {
-                            'Authorization': `Bearer ${AIRTABLE_CONFIG.writeApiKey}`,
-                            'Content-Type': 'application/json'
-                        },
-                        body: JSON.stringify({
-                            fields: {
-                                offerte: updatedOffers
-                            }
-                        })
-                    }
-                );
-
-                if (response.ok) {
-                    alert('Offerta inviata con successo!');
-                    offerInput.value = '';
-                    loadPlayers();
-                } else {
-                    throw new Error('Errore nell\'invio dell\'offerta');
+                if (!auctions[playerName]) {
+                    auctions[playerName] = {
+                        displayName: record.fields.nome.trim(),
+                        bids: [],
+                        highestBid: -1,
+                        leadingTeam: null,
+                        lastBidTimestamp: null,
+                        firstBidTimestamp: null
+                    };
                 }
-            } catch (error) {
-                console.error('Errore:', error);
-                alert('Errore nell\'invio dell\'offerta. Riprova.');
-            }
-        }
+                
+                const offerta = parseInt(record.fields.offerta, 10);
+                auctions[playerName].bids.push({ team: record.fields.squadra, offer: offerta, timestamp: record.fields.data });
+            });
 
-        // Load Trades (Scambi)
-        async function loadTrades() {
-            try {
-                const response = await fetch(
-                    `https://api.airtable.com/v0/${AIRTABLE_CONFIG.baseId}/${AIRTABLE_CONFIG.tradesTableName}`,
-                    {
-                        headers: {
-                            'Authorization': `Bearer ${AIRTABLE_CONFIG.readApiKey}`
+            for (const playerName in auctions) {
+                const auction = auctions[playerName];
+                auction.bids.sort((a,b) => new Date(a.timestamp) - new Date(b.timestamp));
+                if(auction.bids.length > 0) {
+                    auction.firstBidTimestamp = auction.bids[0].timestamp;
+                    auction.lastBidTimestamp = auction.bids[auction.bids.length - 1].timestamp;
+                    
+                    let highestBid = -1;
+                    let leadingTeam = null;
+                    auction.bids.forEach(bid => {
+                        if (bid.offer > highestBid) {
+                            highestBid = bid.offer;
+                            leadingTeam = bid.team;
                         }
-                    }
-                );
-
-                const data = await response.json();
-                tradesData = data.records;
-                renderTrades();
-            } catch (error) {
-                console.error('Errore nel caricamento scambi:', error);
-                document.getElementById('trades-container').innerHTML = 
-                    '<p style="color: red;">Errore nel caricamento degli scambi</p>';
+                    });
+                    auction.highestBid = highestBid;
+                    auction.leadingTeam = leadingTeam;
+                }
             }
+            return auctions;
         }
 
-        function renderTrades() {
-            const container = document.getElementById('trades-container');
+        function renderAuctions(auctions, openDetails = new Set()) {
+            const container = document.getElementById('auctionsContainer');
+            container.innerHTML = '';
             
-            if (tradesData.length === 0) {
-                container.innerHTML = '<p>Nessuno scambio disponibile al momento.</p>';
+            const sortedKeys = Object.keys(auctions).sort((a, b) => new Date(auctions[b].lastBidTimestamp) - new Date(auctions[a].lastBidTimestamp));
+
+            if (sortedKeys.length === 0) {
+                container.innerHTML = `<p class="text-gray-400 text-center py-8">Nessuna asta in corso. Fai la prima offerta!</p>`;
                 return;
             }
 
-            container.innerHTML = '';
-            container.className = 'trades-grid';
+            sortedKeys.forEach(playerName => {
+                const auction = auctions[playerName];
+                if (!auction.firstBidTimestamp) return;
 
-            tradesData.forEach(trade => {
-                const fields = trade.fields;
-                const card = createTradeCard(fields);
+                const endDate = new Date(new Date(auction.firstBidTimestamp).getTime() + AUCTION_DURATION_MS);
+                const isExpired = (endDate - new Date()) <= 0;
+                const isDetailsOpen = openDetails.has(playerName);
+                const initialTimeDisplay = formatTimeLeft(endDate - new Date()); // Calcolo il tempo iniziale
+
+                const card = document.createElement('div');
+                card.className = `border border-gray-700 rounded-xl p-4 mb-4 transition-all ${isExpired ? 'bg-gray-700/50 opacity-70' : 'bg-gray-800'}`;
+                card.setAttribute('data-end-time', endDate.toISOString());
+                card.setAttribute('data-player', playerName);
+
+                const historyHtml = auction.bids.map(bid => `
+                    <li class="flex justify-between items-center text-xs py-1 ${bid.offer === auction.highestBid ? 'font-bold text-green-400' : ''}">
+                        <span>${bid.team}</span>
+                        <span class="text-gray-400">${formatDate(bid.timestamp)}</span>
+                        <span>${bid.offer}</span>
+                    </li>
+                `).join('');
+
+                card.innerHTML = `
+                    <div class="grid grid-cols-3 gap-4 items-center">
+                        <div class="col-span-3 md:col-span-1">
+                            <div>
+                                <h3 class="font-bold text-lg text-white" title="${auction.displayName}">${auction.displayName}</h3>
+                                <button class="copy-btn flex items-center gap-1 mt-1 p-1 rounded-md hover:bg-gray-700" data-clipboard-text="${auction.displayName}" title="Copia nome giocatore">
+                                    <i data-lucide="copy" class="h-4 w-4 text-red-500"></i>
+                                    <span class="text-sm font-medium text-white">Copia nome giocatore</span>
+                                </button>
+                            </div>
+                            <div class="flex items-center text-green-400 font-bold text-xl mt-2">
+                                <i data-lucide="crown" class="mr-1 h-5 w-5"></i>
+                                <span>${auction.highestBid}</span>
+                                <span class="text-sm font-medium text-gray-400 ml-2">(${auction.leadingTeam})</span>
+                            </div>
+                        </div>
+                        <div class="col-span-3 md:col-span-2 text-center">
+                            ${isExpired 
+                                ? `<div class="font-bold text-lg text-white bg-green-600 rounded-lg py-2">AGGIUDICATO!</div>` 
+                                : `<div class="timer-container">
+                                        <div class="text-sm text-gray-400">Tempo Rimanente</div>
+                                        <div class="timer font-mono text-2xl font-bold tracking-tight text-white">${initialTimeDisplay}</div>
+                                   </div>`
+                            }
+                        </div>
+                    </div>
+                    <div class="mt-4 border-t border-gray-700 pt-2">
+                        <details ${isDetailsOpen ? 'open' : ''}>
+                            <summary class="text-sm font-medium cursor-pointer text-gray-400 hover:text-white">Storico Rilanci (${auction.bids.length})</summary>
+                            <ul class="mt-2 space-y-1 pr-2">${historyHtml}</ul>
+                        </details>
+                    </div>
+                `;
                 container.appendChild(card);
             });
+            lucide.createIcons();
         }
+        
+        // --- LOGICA SCAMBI ---
+        function renderTrades(records) {
+            const container = document.getElementById('tradesContainer');
+            container.innerHTML = '';
 
-        function createTradeCard(fields) {
-            const card = document.createElement('div');
-            card.className = 'trade-card';
-
-            const statusClass = fields.stato === 'completato' ? 'status-completed' : 'status-pending';
-            const statusText = fields.stato === 'completato' ? '✓ Completato' : '⏳ In attesa';
-
-            card.innerHTML = `
-                <div class="trade-header">
-                    <div class="trade-teams">
-                        ${fields.squadra_a || 'N/A'}
-                        <span class="trade-arrow">↔</span>
-                        ${fields.squadra_b || 'N/A'}
-                    </div>
-                </div>
-                <div class="trade-players">
-                    <div class="trade-player">
-                        <div class="trade-player-name">${fields.giocatore_a || 'N/A'}</div>
-                        <div class="trade-player-role">
-                            <span class="role-badge role-${fields.ruolo_a?.toLowerCase() || 'p'}">
-                                ${fields.ruolo_a || 'N/A'}
-                            </span>
-                        </div>
-                    </div>
-                    <div class="trade-player">
-                        <div class="trade-player-name">${fields.giocatore_b || 'N/A'}</div>
-                        <div class="trade-player-role">
-                            <span class="role-badge role-${fields.ruolo_b?.toLowerCase() || 'p'}">
-                                ${fields.ruolo_b || 'N/A'}
-                            </span>
-                        </div>
-                    </div>
-                </div>
-                <div class="trade-status ${statusClass}">
-                    ${statusText}
-                </div>
-                <div style="text-align: center; margin-top: 10px; color: #666; font-size: 0.9em;">
-                    ${fields.data || 'N/A'}
-                </div>
-            `;
-
-            return card;
-        }
-
-        // Load Tradable (Scambiabili)
-        async function loadTradable() {
-            try {
-                const response = await fetch(
-                    `https://api.airtable.com/v0/${AIRTABLE_CONFIG.baseId}/${AIRTABLE_CONFIG.tradableTableName}`,
-                    {
-                        headers: {
-                            'Authorization': `Bearer ${AIRTABLE_CONFIG.readApiKey}`
-                        }
-                    }
-                );
-
-                const data = await response.json();
-                tradableData = data.records;
-                renderTradable();
-            } catch (error) {
-                console.error('Errore nel caricamento giocatori scambiabili:', error);
-                document.getElementById('tradable-container').innerHTML = 
-                    '<p style="color: red;">Errore nel caricamento dei giocatori scambiabili</p>';
-            }
-        }
-
-        function renderTradable() {
-            const container = document.getElementById('tradable-container');
-            
-            if (tradableData.length === 0) {
-                container.innerHTML = '<p>Nessun giocatore scambiabile al momento.</p>';
+            if (records.length === 0) {
+                container.innerHTML = `<p class="text-gray-400 text-center py-8">Nessuno scambio proposto. Iniziane uno!</p>`;
                 return;
             }
 
-            container.innerHTML = '';
-            container.className = 'tradable-grid';
+            records.forEach(record => {
+                const trade = record.fields;
+                const endDate = new Date(new Date(trade.data).getTime() + AUCTION_DURATION_MS);
+                const isExpired = (endDate - new Date()) <= 0;
+                const initialTimeDisplay = formatTimeLeft(endDate - new Date()); // Calcolo il tempo iniziale
+                
+                const creditiOffertiHtml = trade.crediti_offerti ? `<span class="text-green-400 font-bold">+${trade.crediti_offerti} cr</span>` : '';
+                const creditiRichiestiHtml = trade.crediti_richiesti ? `<span class="text-red-400 font-bold">-${trade.crediti_richiesti} cr</span>` : '';
 
-            tradableData.forEach(tradable => {
-                const fields = tradable.fields;
-                const card = createTradableCard(fields);
+                const card = document.createElement('div');
+                card.className = `border border-gray-700 rounded-xl p-4 mb-4 transition-all ${isExpired ? 'bg-gray-700/50 opacity-70' : 'bg-gray-800'}`;
+                card.setAttribute('data-end-time', endDate.toISOString());
+                
+                card.innerHTML = `
+                    <div class="grid grid-cols-1 md:grid-cols-3 gap-4 items-center">
+                        <div class="md:col-span-2">
+                            <div class="flex items-center justify-between">
+                                <div class="text-center w-2/5">
+                                    <div class="font-bold text-white">${trade.squadra_proponente}</div>
+                                    <div class="text-sm text-gray-300">${trade.giocatore_offerto}</div>
+                                    <div class="text-xs">${creditiOffertiHtml}</div>
+                                </div>
+                                <i data-lucide="repeat" class="text-blue-400 w-1/5 text-center"></i>
+                                <div class="text-center w-2/5">
+                                    <div class="font-bold text-white">${trade.squadra_ricevente}</div>
+                                    <div class="text-sm text-gray-300">${trade.giocatore_richiesto}</div>
+                                    <div class="text-xs">${creditiRichiestiHtml}</div>
+                                </div>
+                            </div>
+                        </div>
+                        <div class="md:col-span-1 text-center">
+                             ${isExpired 
+                                ? `<div class="font-bold text-lg text-white bg-blue-600 rounded-lg py-2">SCAMBIO FATTO!</div>` 
+                                : `<div class="timer-container">
+                                        <div class="text-sm text-gray-400">Tempo Rimanente</div>
+                                        <div class="timer font-mono text-2xl font-bold tracking-tight text-white">${initialTimeDisplay}</div>
+                                   </div>`
+                            }
+                        </div>
+                    </div>
+                `;
                 container.appendChild(card);
             });
+            lucide.createIcons();
         }
 
-        function createTradableCard(fields) {
-            const card = document.createElement('div');
-            card.className = 'tradable-card';
+        // --- GESTIONE FORM ---
+        document.getElementById('svincolatiForm').addEventListener('submit', (e) => handleFormSubmit(e, 'svincolati'));
+        document.getElementById('scambiForm').addEventListener('submit', (e) => handleFormSubmit(e, 'scambi'));
 
-            card.innerHTML = `
-                <div class="tradable-team">${fields.squadra || 'N/A'}</div>
-                <div class="tradable-player">${fields.nome || 'N/A'}</div>
-                <div class="tradable-info">
-                    <strong>Cerca:</strong> 
-                    <span class="role-badge role-${fields.ruolo_cercato?.toLowerCase() || 'p'}">
-                        ${fields.ruolo_cercato || 'N/A'}
-                    </span>
-                </div>
-                <div class="tradable-info">
-                    <strong>Data:</strong> ${fields.data || 'N/A'}
-                </div>
-            `;
+        async function handleFormSubmit(event, formType) {
+            event.preventDefault();
+            const form = event.target;
+            const submitButton = form.querySelector('button[type="submit"]');
+            const resultDiv = document.getElementById(`${formType}FormResult`);
+            
+            submitButton.disabled = true;
+            submitButton.textContent = 'Invio...';
 
-            return card;
+            const formData = new FormData(form);
+            const password = formData.get('password');
+            const squadra = (formType === 'svincolati') ? formData.get('squadra') : formData.get('squadra_proponente');
+
+            if (TEAM_PASSWORDS[squadra] !== password) {
+                showFormMessage(resultDiv, 'Password errata!', 'error');
+                submitButton.disabled = false;
+                submitButton.textContent = formType === 'svincolati' ? 'Invia Offerta' : 'Pubblica Proposta';
+                return;
+            }
+            
+            let fields = {};
+            if (formType === 'svincolati') {
+                fields = { squadra: formData.get('squadra'), nome: formData.get('nome'), offerta: formData.get('offerta') };
+            } else {
+                fields = {
+                    squadra_proponente: formData.get('squadra_proponente'),
+                    squadra_ricevente: formData.get('squadra_ricevente'),
+                    giocatore_offerto: formData.get('giocatore_offerto'),
+                    giocatore_richiesto: formData.get('giocatore_richiesto'),
+                    crediti_offerti: parseInt(formData.get('crediti_offerti'), 10) || null,
+                    crediti_richiesti: parseInt(formData.get('crediti_richiesti'), 10) || null,
+                };
+            }
+
+            try {
+                const tableName = (formType === 'svincolati') ? AIRTABLE_CONFIG.tableName : AIRTABLE_CONFIG.tradesTableName;
+                const response = await fetch(`https://api.airtable.com/v0/${AIRTABLE_CONFIG.baseId}/${tableName}`, {
+                    method: 'POST',
+                    headers: { 'Authorization': `Bearer ${AIRTABLE_CONFIG.writeApiKey}`, 'Content-Type': 'application/json' },
+                    body: JSON.stringify({ fields })
+                });
+
+                if (!response.ok) {
+                    const errorBody = await response.json();
+                    console.error('Errore da Airtable:', errorBody);
+                    throw new Error('Errore durante l\'invio.');
+                }
+                
+                showFormMessage(resultDiv, 'Proposta inviata!', 'success');
+                form.reset();
+                await main();
+
+            } catch (error) {
+                console.error('Errore invio dati:', error);
+                showFormMessage(resultDiv, 'Errore durante l\'invio.', 'error');
+            } finally {
+                submitButton.disabled = false;
+                submitButton.textContent = formType === 'svincolati' ? 'Invia Offerta' : 'Pubblica Proposta';
+            }
         }
+        
+        function showFormMessage(element, message, type) {
+            element.textContent = message;
+            element.className = `mt-4 text-center text-sm font-medium ${type === 'success' ? 'text-green-500' : 'text-red-500'}`;
+            setTimeout(() => { element.textContent = ''; }, 4000);
+        }
+
+        // --- UTILS ---
+        function copyToClipboard(text, buttonElement) {
+            const tempTextarea = document.createElement('textarea');
+            tempTextarea.value = text;
+            document.body.appendChild(tempTextarea);
+            tempTextarea.select();
+            try {
+                document.execCommand('copy');
+                // Fornisce un feedback visivo cambiando l'icona e il testo
+                const originalContent = buttonElement.innerHTML;
+                buttonElement.innerHTML = `
+                    <i data-lucide="check" class="h-4 w-4 text-green-400"></i>
+                    <span class="text-sm font-medium text-white">Copiato!</span>`;
+                lucide.createIcons();
+                setTimeout(() => {
+                    buttonElement.innerHTML = originalContent;
+                    lucide.createIcons();
+                }, 1500);
+            } catch (err) {
+                console.error('Impossibile copiare il testo:', err);
+            }
+            document.body.removeChild(tempTextarea);
+        }
+
+        function formatDate(dateTimeString) {
+            if (!dateTimeString) return '';
+            const date = new Date(dateTimeString);
+            return date.toLocaleString('it-IT', { day: '2-digit', month: '2-digit', hour: '2-digit', minute: '2-digit' });
+        }
+
+        function formatTimeLeft(ms) {
+            if (ms <= 0) return "00:00:00";
+            const hours = Math.floor(ms / (1000 * 60 * 60)).toString().padStart(2, '0');
+            const minutes = Math.floor((ms / 1000 / 60) % 60).toString().padStart(2, '0');
+            const seconds = Math.floor((ms / 1000) % 60).toString().padStart(2, '0');
+            return `${hours}:${minutes}:${seconds}`;
+        }
+        
+        function updateTimers() {
+            document.querySelectorAll('[data-end-time]').forEach(card => {
+                const timerEl = card.querySelector('.timer');
+                if(!timerEl) return;
+
+                const endTime = new Date(card.dataset.endTime);
+                const timeLeft = endTime - new Date();
+
+                if (timeLeft <= 0) {
+                    timerEl.textContent = "00:00:00";
+                    if (!card.classList.contains('opacity-70')) { main(); }
+                } else {
+                    timerEl.textContent = formatTimeLeft(timeLeft);
+                }
+            });
+        }
+        
+        // --- INIZIALIZZAZIONE ---
+        async function main() {
+            const openDetails = new Set();
+            if (activeTab === 'svincolati') {
+                 document.querySelectorAll('#auctionsContainer details[open]').forEach(detail => {
+                    const card = detail.closest('[data-player]');
+                    if (card) openDetails.add(card.dataset.player);
+                });
+                const records = await fetchData(AIRTABLE_CONFIG.tableName);
+                const auctions = processAuctions(records);
+                renderAuctions(auctions, openDetails);
+            } else {
+                const records = await fetchData(AIRTABLE_CONFIG.tradesTableName);
+                renderTrades(records);
+            }
+        }
+        
+        document.addEventListener('DOMContentLoaded', () => {
+            lucide.createIcons();
+            switchTab('svincolati');
+            setInterval(main, 15000);
+            setInterval(updateTimers, 1000);
+
+            // Listener unico per tutti i pulsanti "copia"
+            document.body.addEventListener('click', function(event) {
+                const copyButton = event.target.closest('.copy-btn');
+                if (copyButton) {
+                    const textToCopy = copyButton.dataset.clipboardText;
+                    copyToClipboard(textToCopy, copyButton);
+                }
+            });
+        });
     </script>
 </body>
 </html>
+

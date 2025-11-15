@@ -4,8 +4,9 @@
 
 const AIRTABLE_CONFIG = {
     baseId: 'appsDydZ1WjNQ6sZI',
-    tableName: 'svincolati', // Aggiornato da 'mercato'
-    tradesTableName: 'scambi', // Aggiunta la nuova tabella per gli scambi
+    tableName: 'svincolati', // Tabella per gli svincolati
+    tradesTableName: 'scambi', // Tabella per gli scambi
+    proposalsTableName: 'scambiabili', // Tabella per i giocatori scambiabili
     // ATTENZIONE: Sostituisci la chiave qui sotto con il tuo nuovo token di Airtable
     readApiKey: 'patGRp7zzRpPQeM1w.76c6bbb8b4e24312f85e38a30d10acc9f8112d7445a8032930539338d021f0d0', // Chiave di SOLA LETTURA
     writeApiKey: 'patGRp7zzRpPQeM1w.76c6bbb8b4e24312f85e38a30d10acc9f8112d7445a8032930539338d021f0d0'  // Chiave di SCRITTURA

@@ -21,8 +21,8 @@
             box-shadow: 0 4px 6px -1px rgb(0 0 0 / 0.1), 0 2px 4px -2px rgb(0 0 0 / 0.1);
         }
         .loader {
-            border: 4px solid #4a5568; /* grigio scuro */
-            border-top: 4px solid #22c55e; /* verde */
+            border: 4px solid #4a5568;
+            border-top: 4px solid #22c55e;
             border-radius: 50%;
             width: 40px;
             height: 40px;
@@ -50,8 +50,9 @@
         </header>
 
         <div class="mb-6 flex justify-center border-b border-gray-700">
-            <button id="tab-svincolati" class="tab-btn active font-semibold py-3 px-6 border-b-2 transition">SVINCOLATI</button>
+            <button id="tab-proposti" class="tab-btn active font-semibold py-3 px-6 border-b-2 transition">PROPOSTI</button>
             <button id="tab-scambi" class="tab-btn text-gray-400 font-semibold py-3 px-6 border-b-2 border-transparent hover:text-white transition">SCAMBI</button>
+            <button id="tab-svincolati" class="tab-btn text-gray-400 font-semibold py-3 px-6 border-b-2 border-transparent hover:text-white transition">SVINCOLATI</button>            
         </div>
 
         <div class="grid grid-cols-1 lg:grid-cols-3 gap-8">
@@ -135,6 +136,53 @@
                         <div id="scambiFormResult" class="mt-4 text-center"></div>
                     </form>
                 </div>
+
+                <div id="form-proposti-container" class="hidden bg-gray-800 p-6 rounded-2xl card-shadow sticky top-8">
+                    <h2 class="text-2xl font-bold mb-4 flex items-center text-white">
+                        <i data-lucide="users" class="mr-2"></i>
+                        Proponi Giocatore Scambiabile
+                    </h2>
+                    <form id="propostiForm">
+                        <div class="mb-4">
+                            <label for="squadra_proposti" class="block text-sm font-medium text-gray-300 mb-1">Seleziona squadra</label>
+                            <select id="squadra_proposti" name="squadra" required class="w-full p-2 border border-gray-600 bg-gray-700 text-white rounded-md focus:ring-2 focus:ring-purple-500 focus:border-purple-500 transition">
+                                <option value="" disabled selected>- Seleziona -</option>
+                                <option value="Gonzi">Gonzi</option><option value="Chivas">Chivas</option><option value="Minturno">Minturno</option><option value="Califfo">Califfo</option><option value="BDS">BDS</option><option value="Diavolone">Diavolone</option><option value="RealSpillo">Real Spillo</option><option value="Pandamonio">Pandamonio</option><option value="SpaccioUno">SpaccioUno</option><option value="SantaMasterella">Santa Masterella</option>
+                            </select>
+                        </div>
+                        <div class="mb-4">
+                            <label for="nome_proposti" class="block text-sm font-medium text-gray-300 mb-1">Giocatore che proponi (Cognome - Squadra - Ruolo)</label>
+                            <input type="text" id="nome_proposti" name="nome" required placeholder="Es. L.Martinez - Inter - Pc" class="w-full p-2 border border-gray-600 bg-gray-700 text-white rounded-md focus:ring-2 focus:ring-purple-500 focus:border-purple-500 transition">
+                        </div>
+                        <div class="mb-4">
+                            <label for="num_ruoli" class="block text-sm font-medium text-gray-300 mb-1">Quanti ruoli cerchi?</label>
+                            <select id="num_ruoli" name="num_ruoli" required class="w-full p-2 border border-gray-600 bg-gray-700 text-white rounded-md focus:ring-2 focus:ring-purple-500 focus:border-purple-500 transition">
+                                <option value="" disabled selected>- Seleziona -</option>
+                                <option value="1">1</option>
+                                <option value="2">2</option>
+                                <option value="3">3</option>
+                                <option value="4">4</option>
+                                <option value="5">5</option>
+                                <option value="6">6</option>
+                                <option value="7">7</option>
+                                <option value="8">8</option>
+                                <option value="9">9</option>
+                                <option value="10">10</option>
+                                <option value="11">11</option>
+                                <option value="12">12</option>
+                            </select>
+                        </div>
+                        <div id="ruoli_container" class="mb-4"></div>
+                        <div class="mb-6">
+                            <label for="password_proposti" class="block text-sm font-medium text-gray-300 mb-1">Password Squadra</label>
+                            <input type="password" id="password_proposti" name="password" required class="w-full p-2 border border-gray-600 bg-gray-700 text-white rounded-md focus:ring-2 focus:ring-purple-500 focus:border-purple-500 transition">
+                        </div>
+                        <button type="submit" class="w-full bg-purple-600 text-white font-bold py-3 px-4 rounded-lg hover:bg-purple-700 focus:outline-none focus:ring-4 focus:ring-purple-500 focus:ring-opacity-50 transition-transform transform hover:scale-105">
+                            Pubblica Proposta
+                        </button>
+                        <div id="propostiFormResult" class="mt-4 text-center"></div>
+                    </form>
+                </div>
             </div>
 
             <div class="lg:col-span-2">
@@ -154,45 +202,128 @@
                         <div class="flex justify-center items-center py-16"><div class="loader"></div></div>
                     </div>
                 </div>
+
+                <div id="content-proposti" class="hidden bg-gray-800 p-6 rounded-2xl card-shadow">
+                    <h2 class="text-2xl font-bold mb-1 text-white">Giocatori Scambiabili</h2>
+                    <p class="text-sm text-purple-400 font-semibold mb-4">LISTA DEI GIOCATORI DISPONIBILI PER SCAMBI</p>
+                    <div id="proposalsContainer">
+                        <div class="flex justify-center items-center py-16"><div class="loader"></div></div>
+                    </div>
+                </div>
             </div>
         </div>
     </div>
 
     <script>
         const AUCTION_DURATION_MS = 24 * 60 * 60 * 1000;
+        const AVAILABLE_ROLES = ['P', 'Dc', 'Dd', 'Ds', 'B', 'E', 'M', 'C', 'W', 'T', 'A', 'PC'];
 
         // --- RIFERIMENTI DOM ---
         const tabSvincolati = document.getElementById('tab-svincolati');
         const tabScambi = document.getElementById('tab-scambi');
+        const tabProposti = document.getElementById('tab-proposti');
         const formSvincolati = document.getElementById('form-svincolati-container');
         const formScambi = document.getElementById('form-scambi-container');
+        const formProposti = document.getElementById('form-proposti-container');
         const contentSvincolati = document.getElementById('content-svincolati');
         const contentScambi = document.getElementById('content-scambi');
+        const contentProposti = document.getElementById('content-proposti');
         let activeTab = 'svincolati';
 
         // --- GESTIONE TAB ---
         tabSvincolati.addEventListener('click', () => switchTab('svincolati'));
         tabScambi.addEventListener('click', () => switchTab('scambi'));
+        tabProposti.addEventListener('click', () => switchTab('proposti'));
 
         function switchTab(tabName) {
             activeTab = tabName;
-            const isSvincolati = tabName === 'svincolati';
             
-            tabSvincolati.classList.toggle('active', isSvincolati);
-            tabScambi.classList.toggle('active', !isSvincolati);
+            tabSvincolati.classList.remove('active');
+            tabScambi.classList.remove('active');
+            tabProposti.classList.remove('active');
             
-            formSvincolati.classList.toggle('hidden', !isSvincolati);
-            formScambi.classList.toggle('hidden', isSvincolati);
-
-            contentSvincolati.classList.toggle('hidden', !isSvincolati);
-            contentScambi.classList.toggle('hidden', isSvincolati);
+            formSvincolati.classList.add('hidden');
+            formScambi.classList.add('hidden');
+            formProposti.classList.add('hidden');
+            contentSvincolati.classList.add('hidden');
+            contentScambi.classList.add('hidden');
+            contentProposti.classList.add('hidden');
+            
+            if (tabName === 'svincolati') {
+                tabSvincolati.classList.add('active');
+                formSvincolati.classList.remove('hidden');
+                contentSvincolati.classList.remove('hidden');
+            } else if (tabName === 'scambi') {
+                tabScambi.classList.add('active');
+                formScambi.classList.remove('hidden');
+                contentScambi.classList.remove('hidden');
+            } else if (tabName === 'proposti') {
+                tabProposti.classList.add('active');
+                formProposti.classList.remove('hidden');
+                contentProposti.classList.remove('hidden');
+            }
             
             main();
+        }
+
+        // --- GESTIONE RUOLI DINAMICI ---
+        const numRuoliSelect = document.getElementById('num_ruoli');
+        const ruoliContainer = document.getElementById('ruoli_container');
+
+        numRuoliSelect.addEventListener('change', function() {
+            const numRuoli = parseInt(this.value);
+            ruoliContainer.innerHTML = '';
+            
+            for (let i = 0; i < numRuoli; i++) {
+                const div = document.createElement('div');
+                div.className = 'mb-3';
+                div.innerHTML = `
+                    <label for="ruolo_${i}" class="block text-sm font-medium text-gray-300 mb-1">Ruolo ${i + 1}</label>
+                    <select id="ruolo_${i}" name="ruolo_${i}" required class="w-full p-2 border border-gray-600 bg-gray-700 text-white rounded-md focus:ring-2 focus:ring-purple-500 focus:border-purple-500 transition">
+                        <option value="" disabled selected>- Seleziona -</option>
+                        ${AVAILABLE_ROLES.map(role => `<option value="${role}">${role}</option>`).join('')}
+                    </select>
+                `;
+                ruoliContainer.appendChild(div);
+            }
+            
+            // Aggiungi listener per validazione duplicati
+            ruoliContainer.querySelectorAll('select').forEach(select => {
+                select.addEventListener('change', validateRoles);
+            });
+        });
+
+        function validateRoles() {
+            const selects = ruoliContainer.querySelectorAll('select');
+            const selectedValues = [];
+            let hasDuplicates = false;
+            
+            selects.forEach(select => {
+                if (select.value) {
+                    if (selectedValues.includes(select.value)) {
+                        hasDuplicates = true;
+                        select.classList.add('border-red-500');
+                    } else {
+                        select.classList.remove('border-red-500');
+                        selectedValues.push(select.value);
+                    }
+                }
+            });
+            
+            return !hasDuplicates;
         }
         
         // --- LOGICA GENERICA ---
         async function fetchData(tableName) {
-            const container = activeTab === 'svincolati' ? document.getElementById('auctionsContainer') : document.getElementById('tradesContainer');
+            let container;
+            if (activeTab === 'svincolati') {
+                container = document.getElementById('auctionsContainer');
+            } else if (activeTab === 'scambi') {
+                container = document.getElementById('tradesContainer');
+            } else {
+                container = document.getElementById('proposalsContainer');
+            }
+            
             try {
                 const url = `https://api.airtable.com/v0/${AIRTABLE_CONFIG.baseId}/${tableName}?sort[0][field]=data&sort[0][direction]=desc`;
                 const response = await fetch(url, { headers: { Authorization: `Bearer ${AIRTABLE_CONFIG.readApiKey}` } });
@@ -268,7 +399,7 @@
                 const endDate = new Date(new Date(auction.firstBidTimestamp).getTime() + AUCTION_DURATION_MS);
                 const isExpired = (endDate - new Date()) <= 0;
                 const isDetailsOpen = openDetails.has(playerName);
-                const initialTimeDisplay = formatTimeLeft(endDate - new Date()); // Calcolo il tempo iniziale
+                const initialTimeDisplay = formatTimeLeft(endDate - new Date());
 
                 const card = document.createElement('div');
                 card.className = `border border-gray-700 rounded-xl p-4 mb-4 transition-all ${isExpired ? 'bg-gray-700/50 opacity-70' : 'bg-gray-800'}`;
@@ -335,7 +466,7 @@
                 const trade = record.fields;
                 const endDate = new Date(new Date(trade.data).getTime() + AUCTION_DURATION_MS);
                 const isExpired = (endDate - new Date()) <= 0;
-                const initialTimeDisplay = formatTimeLeft(endDate - new Date()); // Calcolo il tempo iniziale
+                const initialTimeDisplay = formatTimeLeft(endDate - new Date());
                 
                 const creditiOffertiHtml = trade.crediti_offerti ? `<span class="text-green-400 font-bold">+${trade.crediti_offerti} cr</span>` : '';
                 const creditiRichiestiHtml = trade.crediti_richiesti ? `<span class="text-red-400 font-bold">-${trade.crediti_richiesti} cr</span>` : '';
@@ -377,9 +508,81 @@
             lucide.createIcons();
         }
 
+        // --- LOGICA PROPOSTI ---
+        function renderProposals(records) {
+            const container = document.getElementById('proposalsContainer');
+            container.innerHTML = '';
+
+            if (records.length === 0) {
+                container.innerHTML = `<p class="text-gray-400 text-center py-8">Nessun giocatore proposto. Pubblica il primo!</p>`;
+                return;
+            }
+
+            const proposalsByTeam = {};
+            records.forEach(record => {
+                const team = record.fields.squadra;
+                if (!proposalsByTeam[team]) {
+                    proposalsByTeam[team] = [];
+                }
+                proposalsByTeam[team].push(record.fields);
+            });
+
+            const sortedTeams = Object.keys(proposalsByTeam).sort();
+
+            sortedTeams.forEach(team => {
+                const teamProposals = proposalsByTeam[team];
+                
+                const card = document.createElement('div');
+                card.className = 'border border-gray-700 rounded-xl p-4 mb-4 bg-gray-800';
+                
+                const playersHtml = teamProposals.map(proposal => {
+                    const roles = proposal.ruolo_cercato ? proposal.ruolo_cercato.split(',').map(r => r.trim()) : [];
+                    const roleColors = {
+                        'P': 'bg-yellow-600', 'Dc': 'bg-green-600', 'Dd': 'bg-green-500', 
+                        'Ds': 'bg-green-400', 'B': 'bg-green-600', 'E': 'bg-blue-600',
+                        'M': 'bg-blue-600', 'C': 'bg-blue-600', 'W': 'bg-purple-600',
+                        'T': 'bg-purple-600', 'A': 'bg-red-600', 'PC': 'bg-red-600'
+                    };
+
+                    const rolesHtml = roles.map(role => 
+                        `<span class="${roleColors[role] || 'bg-purple-600'} text-white px-2 py-1 rounded-full font-bold text-xs">${role}</span>`
+                    ).join(' ');
+                    
+                    return `
+                        <div class="flex justify-between items-center py-2 border-b border-gray-700 last:border-b-0">
+                            <div class="flex-1">
+                                <div class="font-bold text-white">${proposal.nome}</div>
+                                <div class="text-xs text-gray-400">${formatDate(proposal.data)}</div>
+                            </div>
+                            <div class="flex items-center gap-2 flex-wrap justify-end">
+                                <span class="text-sm text-gray-400">Cerca:</span>
+                                ${rolesHtml}
+                            </div>
+                        </div>
+                    `;
+                }).join('');
+                
+                card.innerHTML = `
+                    <div class="mb-3">
+                        <h3 class="text-xl font-bold text-white flex items-center">
+                            <i data-lucide="users" class="mr-2 h-5 w-5 text-purple-400"></i>
+                            ${team}
+                            <span class="ml-2 text-sm font-normal text-gray-400">(${teamProposals.length} giocator${teamProposals.length > 1 ? 'i' : 'e'})</span>
+                        </h3>
+                    </div>
+                    <div class="space-y-1">
+                        ${playersHtml}
+                    </div>
+                `;
+                container.appendChild(card);
+            });
+            lucide.createIcons();
+        }
+
         // --- GESTIONE FORM ---
         document.getElementById('svincolatiForm').addEventListener('submit', (e) => handleFormSubmit(e, 'svincolati'));
         document.getElementById('scambiForm').addEventListener('submit', (e) => handleFormSubmit(e, 'scambi'));
+        document.getElementById('propostiForm').addEventListener('submit', (e) => handleFormSubmit(e, 'proposti'));
 
         async function handleFormSubmit(event, formType) {
             event.preventDefault();
@@ -392,19 +595,34 @@
 
             const formData = new FormData(form);
             const password = formData.get('password');
-            const squadra = (formType === 'svincolati') ? formData.get('squadra') : formData.get('squadra_proponente');
+            let squadra;
+            
+            if (formType === 'svincolati') {
+                squadra = formData.get('squadra');
+            } else if (formType === 'scambi') {
+                squadra = formData.get('squadra_proponente');
+            } else {
+                squadra = formData.get('squadra');
+            }
 
             if (TEAM_PASSWORDS[squadra] !== password) {
                 showFormMessage(resultDiv, 'Password errata!', 'error');
                 submitButton.disabled = false;
-                submitButton.textContent = formType === 'svincolati' ? 'Invia Offerta' : 'Pubblica Proposta';
+                submitButton.textContent = getButtonText(formType);
                 return;
             }
             
             let fields = {};
+            let tableName;
+            
             if (formType === 'svincolati') {
-                fields = { squadra: formData.get('squadra'), nome: formData.get('nome'), offerta: formData.get('offerta') };
-            } else {
+                fields = { 
+                    squadra: formData.get('squadra'), 
+                    nome: formData.get('nome'), 
+                    offerta: formData.get('offerta') 
+                };
+                tableName = AIRTABLE_CONFIG.tableName;
+            } else if (formType === 'scambi') {
                 fields = {
                     squadra_proponente: formData.get('squadra_proponente'),
                     squadra_ricevente: formData.get('squadra_ricevente'),
@@ -413,10 +631,31 @@
                     crediti_offerti: parseInt(formData.get('crediti_offerti'), 10) || null,
                     crediti_richiesti: parseInt(formData.get('crediti_richiesti'), 10) || null,
                 };
+                tableName = AIRTABLE_CONFIG.tradesTableName;
+            } else {
+                if (!validateRoles()) {
+                    showFormMessage(resultDiv, 'Non puoi selezionare lo stesso ruolo due volte!', 'error');
+                    submitButton.disabled = false;
+                    submitButton.textContent = getButtonText(formType);
+                    return;
+                }
+                
+                const numRuoli = parseInt(formData.get('num_ruoli'));
+                const selectedRoles = [];
+                for (let i = 0; i < numRuoli; i++) {
+                    const role = formData.get(`ruolo_${i}`);
+                    if (role) selectedRoles.push(role);
+                }
+                
+                fields = {
+                    squadra: formData.get('squadra'),
+                    nome: formData.get('nome'),
+                    ruolo_cercato: selectedRoles.join(', ')
+                };
+                tableName = AIRTABLE_CONFIG.proposalsTableName;
             }
 
             try {
-                const tableName = (formType === 'svincolati') ? AIRTABLE_CONFIG.tableName : AIRTABLE_CONFIG.tradesTableName;
                 const response = await fetch(`https://api.airtable.com/v0/${AIRTABLE_CONFIG.baseId}/${tableName}`, {
                     method: 'POST',
                     headers: { 'Authorization': `Bearer ${AIRTABLE_CONFIG.writeApiKey}`, 'Content-Type': 'application/json' },
@@ -431,6 +670,9 @@
                 
                 showFormMessage(resultDiv, 'Proposta inviata!', 'success');
                 form.reset();
+                if (formType === 'proposti') {
+                    ruoliContainer.innerHTML = '';
+                }
                 await main();
 
             } catch (error) {
@@ -438,8 +680,14 @@
                 showFormMessage(resultDiv, 'Errore durante l\'invio.', 'error');
             } finally {
                 submitButton.disabled = false;
-                submitButton.textContent = formType === 'svincolati' ? 'Invia Offerta' : 'Pubblica Proposta';
+                submitButton.textContent = getButtonText(formType);
             }
+        }
+        
+        function getButtonText(formType) {
+            if (formType === 'svincolati') return 'Invia Offerta';
+            if (formType === 'scambi') return 'Pubblica Proposta';
+            return 'Pubblica Proposta';
         }
         
         function showFormMessage(element, message, type) {
@@ -456,7 +704,6 @@
             tempTextarea.select();
             try {
                 document.execCommand('copy');
-                // Fornisce un feedback visivo cambiando l'icona e il testo
                 const originalContent = buttonElement.innerHTML;
                 buttonElement.innerHTML = `
                     <i data-lucide="check" class="h-4 w-4 text-green-400"></i>
@@ -505,28 +752,30 @@
         
         // --- INIZIALIZZAZIONE ---
         async function main() {
-            const openDetails = new Set();
             if (activeTab === 'svincolati') {
-                 document.querySelectorAll('#auctionsContainer details[open]').forEach(detail => {
+                const openDetails = new Set();
+                document.querySelectorAll('#auctionsContainer details[open]').forEach(detail => {
                     const card = detail.closest('[data-player]');
                     if (card) openDetails.add(card.dataset.player);
                 });
                 const records = await fetchData(AIRTABLE_CONFIG.tableName);
                 const auctions = processAuctions(records);
                 renderAuctions(auctions, openDetails);
-            } else {
+            } else if (activeTab === 'scambi') {
                 const records = await fetchData(AIRTABLE_CONFIG.tradesTableName);
                 renderTrades(records);
+            } else if (activeTab === 'proposti') {
+                const records = await fetchData(AIRTABLE_CONFIG.proposalsTableName);
+                renderProposals(records);
             }
         }
         
         document.addEventListener('DOMContentLoaded', () => {
             lucide.createIcons();
-            switchTab('svincolati');
+            switchTab('proposti');
             setInterval(main, 15000);
             setInterval(updateTimers, 1000);
 
-            // Listener unico per tutti i pulsanti "copia"
             document.body.addEventListener('click', function(event) {
                 const copyButton = event.target.closest('.copy-btn');
                 if (copyButton) {
@@ -538,4 +787,3 @@
     </script>
 </body>
 </html>
-

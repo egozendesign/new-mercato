@@ -549,7 +549,11 @@ if (response.status === 429) {
             container.innerHTML = '';
 
             if (records.length === 0) {
-                container.innerHTML = `<p class="text-gray-400 text-center py-8">Nessun giocatore proposto. Pubblica il primo!</p>`;
+                container.innerHTML = `<p class="text-gray-400 text-center py-8"><div class="text-center py-12 px-4">
+                <p class="text-red-500 font-bold mb-4 text-2xl">Siamo spiacenti ma grazie al Califfo<br>abbiamo terminato le risorse free!</p>
+                <p class="text-gray-400 text-lg mb-2">Il mercato riapre a Dicembre 2025</p>
+                <p class="text-gray-500 text-sm">Nel frattempo insulta il Califfo su WhatsApp 🤬</p>
+            </div></p>`;
                 return;
             }
 

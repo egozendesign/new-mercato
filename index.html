@@ -340,15 +340,27 @@
                 const url = `https://api.airtable.com/v0/${AIRTABLE_CONFIG.baseId}/${tableName}?sort[0][field]=data&sort[0][direction]=desc`;
                 const response = await fetch(url, { headers: { Authorization: `Bearer ${AIRTABLE_CONFIG.readApiKey}` } });
 
-                if (response.status === 429) {
-                    console.error('🚫 RATE LIMIT AIRTABLE! Troppo traffico. Attendi 60 secondi.');
-                    container.innerHTML = `<div class="text-center py-8">
-                        <p class="text-yellow-500 font-bold mb-2 text-xl">⏳ Limite richieste superato</p>
-                        <p class="text-gray-400">Airtable ha bloccato temporaneamente le richieste.</p>
-                        <p class="text-gray-400 mt-2">Attendi 60 secondi e ricarica la pagina.</p>
-                    </div>`;
-                    return [];
-                }
+if (response.status === 429) {
+    console.error('🚫 RATE LIMIT AIRTABLE! Grazie Califfo!');
+    
+    // Calcola giorni mancanti a dicembre
+    const now = new Date();
+    const nextMonth = new Date(now.getFullYear(), now.getMonth() + 1, 1);
+    const daysLeft = Math.ceil((nextMonth - now) / (1000 * 60 * 60 * 24));
+    
+    container.innerHTML = `<div class="text-center py-12 px-4">
+        <div class="text-6xl mb-4">😭</div>
+        <p class="text-red-500 font-bold mb-4 text-2xl">Siamo spiacenti ma grazie al Califfo<br>abbiamo terminato le risorse free!</p>
+        <div class="bg-gray-700 rounded-lg p-4 mb-4 inline-block">
+            <p class="text-white text-lg">Il mercato riapre tra:</p>
+            <p class="text-green-400 font-bold text-4xl font-mono">${daysLeft} giorni</p>
+        </div>
+        <p class="text-gray-400 text-lg mb-2">(1° Dicembre 2025)</p>
+        <p class="text-gray-500 text-sm mt-4">Nel frattempo insulta il Califfo su WhatsApp 🤬</p>
+    </div>`;
+    return [];
+}
+
 
                 if (!response.ok) throw new Error(`Errore di rete: ${response.statusText}`);
                 const data = await response.json();

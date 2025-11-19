@@ -314,40 +314,40 @@
         }
         
         // --- LOGICA GENERICA ---
-        async function fetchData(tableName, retries = 3, baseDelay = 1000) {
-            let container;
-            if (activeTab === 'svincolati') {
-                container = document.getElementById('auctionsContainer');
-            } else if (activeTab === 'scambi') {
-                container = document.getElementById('tradesContainer');
-            } else {
-                container = document.getElementById('proposalsContainer');
+        async function fetchData(tableName, retries = 1, baseDelay = 30000) {
+    let container;
+    if (activeTab === 'svincolati') {
+        container = document.getElementById('auctionsContainer');
+    } else if (activeTab === 'scambi') {
+        container = document.getElementById('tradesContainer');
+    } else {
+        container = document.getElementById('proposalsContainer');
+    }
+    
+    try {
+        const url = `https://api.airtable.com/v0/${AIRTABLE_CONFIG.baseId}/${tableName}?sort[0][field]=data&sort[0][direction]=desc`;
+        const response = await fetch(url, { headers: { Authorization: `Bearer ${AIRTABLE_CONFIG.readApiKey}` } });
+        
+        // Gestione errore 429 (Rate Limit)
+        if (response.status === 429) {
+            if (retries > 0) {
+                console.log(`⏳ Rate limit superato. Aspetto 30 secondi prima di riprovare...`);
+                await new Promise(resolve => setTimeout(resolve, 30000)); // 30 secondi fissi
+                return fetchData(tableName, retries - 1, baseDelay);
             }
-            
-            try {
-                const url = `https://api.airtable.com/v0/${AIRTABLE_CONFIG.baseId}/${tableName}?sort[0][field]=data&sort[0][direction]=desc`;
-                const response = await fetch(url, { headers: { Authorization: `Bearer ${AIRTABLE_CONFIG.readApiKey}` } });
-                
-                // Gestione errore 429 (Rate Limit)
-                if (response.status === 429) {
-                    if (retries > 0) {
-                        const delay = baseDelay * Math.pow(2, 3 - retries); // Exponential backoff
-                        console.log(`⏳ Rate limit superato. Riprovo tra ${delay/1000}s...`);
-                        await new Promise(resolve => setTimeout(resolve, delay));
-                        return fetchData(tableName, retries - 1, baseDelay);
-                    }
-                    throw new Error('Rate limit superato dopo vari tentativi');
-                }
-                
-                if (!response.ok) throw new Error(`Errore di rete: ${response.statusText}`);
-                const data = await response.json();
-                return data.records;
-            } catch (error) {
-                console.error("Errore nel recupero dati:", error);
-                container.innerHTML = `<p class="text-red-500 text-center">Impossibile caricare i dati. Riprova più tardi.</p>`;
-                return [];
-            }
+            throw new Error('Rate limit superato. Ricarica la pagina tra qualche minuto.');
         }
+        
+        if (!response.ok) throw new Error(`Errore di rete: ${response.statusText}`);
+        const data = await response.json();
+        return data.records;
+    } catch (error) {
+        console.error("Errore nel recupero dati:", error);
+        container.innerHTML = `<p class="text-red-500 text-center">Impossibile caricare i dati. Riprova più tardi.</p>`;
+        return [];
+    }
+}
+
         
         // --- LOGICA SVINCOLATI ---
         function processAuctions(records) {

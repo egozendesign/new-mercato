@@ -229,8 +229,10 @@
         const contentScambi = document.getElementById('content-scambi');
         const contentProposti = document.getElementById('content-proposti');
         let activeTab = 'svincolati';
-        let rateLimitActive = false;
-        let rateLimitUntil = null;
+        let isRefreshing = false;
+        let lastRequestTime = 0;
+        const MIN_REQUEST_INTERVAL = 500; // Minimo 500ms tra richieste (max 2 req/sec)
+
 
         // --- GESTIONE TAB ---
         tabSvincolati.addEventListener('click', () => switchTab('svincolati'));
@@ -316,40 +318,47 @@
         }
         
         // --- LOGICA GENERICA ---
-async function fetchData(tableName) {
-    let container;
-    if (activeTab === 'svincolati') {
-        container = document.getElementById('auctionsContainer');
-    } else if (activeTab === 'scambi') {
-        container = document.getElementById('tradesContainer');
-    } else {
-        container = document.getElementById('proposalsContainer');
-    }
-    
-    try {
-        const url = `https://api.airtable.com/v0/${AIRTABLE_CONFIG.baseId}/${tableName}?sort[0][field]=data&sort[0][direction]=desc`;
-        const response = await fetch(url, { headers: { Authorization: `Bearer ${AIRTABLE_CONFIG.readApiKey}` } });
-        
-        if (response.status === 429) {
-            console.error('🚫 RATE LIMIT! Troppo traffico. Attendi 30-60 secondi e ricarica la pagina.');
-            container.innerHTML = `<div class="text-center py-8">
-                <p class="text-yellow-500 font-bold mb-2">⏳ Troppo traffico</p>
-                <p class="text-gray-400 text-sm">Ricarica la pagina tra 30 secondi</p>
-            </div>`;
-            return [];
+        async function fetchData(tableName) {
+            // Rate limiting: aspetta almeno 500ms tra chiamate
+            const now = Date.now();
+            const timeSinceLastRequest = now - lastRequestTime;
+            if (timeSinceLastRequest < MIN_REQUEST_INTERVAL) {
+                await new Promise(resolve => setTimeout(resolve, MIN_REQUEST_INTERVAL - timeSinceLastRequest));
+            }
+            lastRequestTime = Date.now();
+
+            let container;
+            if (activeTab === 'svincolati') {
+                container = document.getElementById('auctionsContainer');
+            } else if (activeTab === 'scambi') {
+                container = document.getElementById('tradesContainer');
+            } else {
+                container = document.getElementById('proposalsContainer');
+            }
+
+            try {
+                const url = `https://api.airtable.com/v0/${AIRTABLE_CONFIG.baseId}/${tableName}?sort[0][field]=data&sort[0][direction]=desc`;
+                const response = await fetch(url, { headers: { Authorization: `Bearer ${AIRTABLE_CONFIG.readApiKey}` } });
+
+                if (response.status === 429) {
+                    console.error('🚫 RATE LIMIT AIRTABLE! Troppo traffico. Attendi 60 secondi.');
+                    container.innerHTML = `<div class="text-center py-8">
+                        <p class="text-yellow-500 font-bold mb-2 text-xl">⏳ Limite richieste superato</p>
+                        <p class="text-gray-400">Airtable ha bloccato temporaneamente le richieste.</p>
+                        <p class="text-gray-400 mt-2">Attendi 60 secondi e ricarica la pagina.</p>
+                    </div>`;
+                    return [];
+                }
+
+                if (!response.ok) throw new Error(`Errore di rete: ${response.statusText}`);
+                const data = await response.json();
+                return data.records;
+            } catch (error) {
+                console.error("Errore nel recupero dati:", error);
+                container.innerHTML = `<p class="text-red-500 text-center">Impossibile caricare i dati. Riprova più tardi.</p>`;
+                return [];
+            }
         }
-        
-        if (!response.ok) throw new Error(`Errore di rete: ${response.statusText}`);
-        const data = await response.json();
-        return data.records;
-    } catch (error) {
-        console.error("Errore nel recupero dati:", error);
-        container.innerHTML = `<p class="text-red-500 text-center">Errore di connessione.</p>`;
-        return [];
-    }
-}
-
-
         
         // --- LOGICA SVINCOLATI ---
         function processAuctions(records) {
@@ -765,61 +774,34 @@ async function fetchData(tableName) {
         }
         
         // --- INIZIALIZZAZIONE ---
-        
-        // Flag per evitare chiamate sovrapposte
-        let isRefreshing = false;
+        async function main() {
+            if (isRefreshing) {
+                console.log('⏸️ Refresh già in corso, salto questa chiamata');
+                return;
+            }
 
-async function main() {
-    if (isRefreshing) {
-        console.log('⏸️ Refresh già in corso, salto questa chiamata');
-        return;
-    }
-    
-    isRefreshing = true;
-    try {
-        if (activeTab === 'svincolati') {
-            const openDetails = new Set();
-            document.querySelectorAll('#auctionsContainer details[open]').forEach(detail => {
-                const card = detail.closest('[data-player]');
-                if (card) openDetails.add(card.dataset.player);
-            });
-            const records = await fetchData(AIRTABLE_CONFIG.tableName);
-            const auctions = processAuctions(records);
-            renderAuctions(auctions, openDetails);
-        } else if (activeTab === 'scambi') {
-            const records = await fetchData(AIRTABLE_CONFIG.tradesTableName);
-            renderTrades(records);
-        } else if (activeTab === 'proposti') {
-            const records = await fetchData(AIRTABLE_CONFIG.proposalsTableName);
-            renderProposals(records);
+            isRefreshing = true;
+            try {
+                if (activeTab === 'svincolati') {
+                    const openDetails = new Set();
+                    document.querySelectorAll('#auctionsContainer details[open]').forEach(detail => {
+                        const card = detail.closest('[data-player]');
+                        if (card) openDetails.add(card.dataset.player);
+                    });
+                    const records = await fetchData(AIRTABLE_CONFIG.tableName);
+                    const auctions = processAuctions(records);
+                    renderAuctions(auctions, openDetails);
+                } else if (activeTab === 'scambi') {
+                    const records = await fetchData(AIRTABLE_CONFIG.tradesTableName);
+                    renderTrades(records);
+                } else if (activeTab === 'proposti') {
+                    const records = await fetchData(AIRTABLE_CONFIG.proposalsTableName);
+                    renderProposals(records);
+                }
+            } finally {
+                isRefreshing = false;
+            }
         }
-    } finally {
-        isRefreshing = false;
-    }
-}
-    
-    isRefreshing = true;
-    try {
-        if (activeTab === 'svincolati') {
-            const openDetails = new Set();
-            document.querySelectorAll('#auctionsContainer details[open]').forEach(detail => {
-                const card = detail.closest('[data-player]');
-                if (card) openDetails.add(card.dataset.player);
-            });
-            const records = await fetchData(AIRTABLE_CONFIG.tableName);
-            const auctions = processAuctions(records);
-            renderAuctions(auctions, openDetails);
-        } else if (activeTab === 'scambi') {
-            const records = await fetchData(AIRTABLE_CONFIG.tradesTableName);
-            renderTrades(records);
-        } else if (activeTab === 'proposti') {
-            const records = await fetchData(AIRTABLE_CONFIG.proposalsTableName);
-            renderProposals(records);
-        }
-    } finally {
-        isRefreshing = false;
-    }
-}
         
         document.addEventListener('DOMContentLoaded', () => {
             lucide.createIcons();

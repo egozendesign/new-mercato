@@ -314,7 +314,7 @@
         }
         
         // --- LOGICA GENERICA ---
-        async function fetchData(tableName) {
+        async function fetchData(tableName, retries = 3, baseDelay = 1000) {
             let container;
             if (activeTab === 'svincolati') {
                 container = document.getElementById('auctionsContainer');
@@ -327,6 +327,18 @@
             try {
                 const url = `https://api.airtable.com/v0/${AIRTABLE_CONFIG.baseId}/${tableName}?sort[0][field]=data&sort[0][direction]=desc`;
                 const response = await fetch(url, { headers: { Authorization: `Bearer ${AIRTABLE_CONFIG.readApiKey}` } });
+                
+                // Gestione errore 429 (Rate Limit)
+                if (response.status === 429) {
+                    if (retries > 0) {
+                        const delay = baseDelay * Math.pow(2, 3 - retries); // Exponential backoff
+                        console.log(`⏳ Rate limit superato. Riprovo tra ${delay/1000}s...`);
+                        await new Promise(resolve => setTimeout(resolve, delay));
+                        return fetchData(tableName, retries - 1, baseDelay);
+                    }
+                    throw new Error('Rate limit superato dopo vari tentativi');
+                }
+                
                 if (!response.ok) throw new Error(`Errore di rete: ${response.statusText}`);
                 const data = await response.json();
                 return data.records;
@@ -751,29 +763,43 @@
         }
         
         // --- INIZIALIZZAZIONE ---
+        
+        // Flag per evitare chiamate sovrapposte
+        let isRefreshing = false;
+
         async function main() {
-            if (activeTab === 'svincolati') {
-                const openDetails = new Set();
-                document.querySelectorAll('#auctionsContainer details[open]').forEach(detail => {
-                    const card = detail.closest('[data-player]');
-                    if (card) openDetails.add(card.dataset.player);
-                });
-                const records = await fetchData(AIRTABLE_CONFIG.tableName);
-                const auctions = processAuctions(records);
-                renderAuctions(auctions, openDetails);
-            } else if (activeTab === 'scambi') {
-                const records = await fetchData(AIRTABLE_CONFIG.tradesTableName);
-                renderTrades(records);
-            } else if (activeTab === 'proposti') {
-                const records = await fetchData(AIRTABLE_CONFIG.proposalsTableName);
-                renderProposals(records);
+            if (isRefreshing) {
+                console.log('⏸️ Refresh già in corso, salto questa chiamata');
+                return;
+            }
+            
+            isRefreshing = true;
+            try {
+                if (activeTab === 'svincolati') {
+                    const openDetails = new Set();
+                    document.querySelectorAll('#auctionsContainer details[open]').forEach(detail => {
+                        const card = detail.closest('[data-player]');
+                        if (card) openDetails.add(card.dataset.player);
+                    });
+                    const records = await fetchData(AIRTABLE_CONFIG.tableName);
+                    const auctions = processAuctions(records);
+                    renderAuctions(auctions, openDetails);
+                } else if (activeTab === 'scambi') {
+                    const records = await fetchData(AIRTABLE_CONFIG.tradesTableName);
+                    renderTrades(records);
+                } else if (activeTab === 'proposti') {
+                    const records = await fetchData(AIRTABLE_CONFIG.proposalsTableName);
+                    renderProposals(records);
+                }
+            } finally {
+                isRefreshing = false;
             }
         }
         
         document.addEventListener('DOMContentLoaded', () => {
             lucide.createIcons();
             switchTab('proposti');
-            setInterval(main, 15000);
+            setInterval(main, 30000);
             setInterval(updateTimers, 1000);
 
             document.body.addEventListener('click', function(event) {

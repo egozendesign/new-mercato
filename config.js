@@ -8,8 +8,8 @@ const AIRTABLE_CONFIG = {
     tradesTableName: 'scambi', // Tabella per gli scambi
     proposalsTableName: 'scambiabili', // Tabella per i giocatori scambiabili
     // ATTENZIONE: Sostituisci la chiave qui sotto con il tuo nuovo token di Airtable
-    readApiKey: 'patGRp7zzRpPQeM1w.76c6bbb8b4e24312f85e38a30d10acc9f8112d7445a8032930539338d021f0d0', // Chiave di SOLA LETTURA
-    writeApiKey: 'patGRp7zzRpPQeM1w.76c6bbb8b4e24312f85e38a30d10acc9f8112d7445a8032930539338d021f0d0'  // Chiave di SCRITTURA
+    readApiKey: 'path1FBahyIwDGSjC.4639203c7f6a16188f23e6ab430f9bab4270407b6857a3042011992cb1ee4700', // Chiave di SOLA LETTURA
+    writeApiKey: 'path1FBahyIwDGSjC.4639203c7f6a16188f23e6ab430f9bab4270407b6857a3042011992cb1ee4700'  // Chiave di SCRITTURA
 };
 
 const TEAM_PASSWORDS = {

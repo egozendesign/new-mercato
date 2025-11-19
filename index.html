@@ -229,6 +229,8 @@
         const contentScambi = document.getElementById('content-scambi');
         const contentProposti = document.getElementById('content-proposti');
         let activeTab = 'svincolati';
+        let rateLimitActive = false;
+        let rateLimitUntil = null;
 
         // --- GESTIONE TAB ---
         tabSvincolati.addEventListener('click', () => switchTab('svincolati'));
@@ -314,7 +316,21 @@
         }
         
         // --- LOGICA GENERICA ---
-        async function fetchData(tableName, retries = 1, baseDelay = 30000) {
+async function fetchData(tableName) {
+    // Controlla se siamo in cooldown
+    if (rateLimitActive) {
+        const remainingTime = Math.ceil((rateLimitUntil - Date.now()) / 1000);
+        if (remainingTime > 0) {
+            console.log(`⏸️ Rate limit attivo. Riprovo automaticamente tra ${remainingTime}s`);
+            return [];
+        } else {
+            // Cooldown finito, resetta
+            rateLimitActive = false;
+            rateLimitUntil = null;
+            console.log('✅ Rate limit resettato, riprendo le chiamate');
+        }
+    }
+    
     let container;
     if (activeTab === 'svincolati') {
         container = document.getElementById('auctionsContainer');
@@ -330,12 +346,14 @@
         
         // Gestione errore 429 (Rate Limit)
         if (response.status === 429) {
-            if (retries > 0) {
-                console.log(`⏳ Rate limit superato. Aspetto 30 secondi prima di riprovare...`);
-                await new Promise(resolve => setTimeout(resolve, 30000)); // 30 secondi fissi
-                return fetchData(tableName, retries - 1, baseDelay);
-            }
-            throw new Error('Rate limit superato. Ricarica la pagina tra qualche minuto.');
+            rateLimitActive = true;
+            rateLimitUntil = Date.now() + 35000; // 35 secondi di sicurezza
+            console.error('🚫 RATE LIMIT! Blocco tutte le chiamate per 35 secondi');
+            container.innerHTML = `<div class="text-center py-8">
+                <p class="text-yellow-500 font-bold mb-2">⏳ Troppo traffico</p>
+                <p class="text-gray-400 text-sm">Attendi 35 secondi...</p>
+            </div>`;
+            return [];
         }
         
         if (!response.ok) throw new Error(`Errore di rete: ${response.statusText}`);
@@ -343,10 +361,13 @@
         return data.records;
     } catch (error) {
         console.error("Errore nel recupero dati:", error);
-        container.innerHTML = `<p class="text-red-500 text-center">Impossibile caricare i dati. Riprova più tardi.</p>`;
+        if (!rateLimitActive) {
+            container.innerHTML = `<p class="text-red-500 text-center">Impossibile caricare i dati. Riprova più tardi.</p>`;
+        }
         return [];
     }
 }
+
 
         
         // --- LOGICA SVINCOLATI ---
@@ -767,34 +788,54 @@
         // Flag per evitare chiamate sovrapposte
         let isRefreshing = false;
 
-        async function main() {
-            if (isRefreshing) {
-                console.log('⏸️ Refresh già in corso, salto questa chiamata');
-                return;
+async function main() {
+    if (isRefreshing) {
+        console.log('⏸️ Refresh già in corso, salto questa chiamata');
+        return;
+    }
+    
+    // Se siamo in rate limit, mostra countdown
+    if (rateLimitActive && rateLimitUntil) {
+        const remainingTime = Math.ceil((rateLimitUntil - Date.now()) / 1000);
+        if (remainingTime > 0) {
+            let container;
+            if (activeTab === 'svincolati') {
+                container = document.getElementById('auctionsContainer');
+            } else if (activeTab === 'scambi') {
+                container = document.getElementById('tradesContainer');
+            } else {
+                container = document.getElementById('proposalsContainer');
             }
-            
-            isRefreshing = true;
-            try {
-                if (activeTab === 'svincolati') {
-                    const openDetails = new Set();
-                    document.querySelectorAll('#auctionsContainer details[open]').forEach(detail => {
-                        const card = detail.closest('[data-player]');
-                        if (card) openDetails.add(card.dataset.player);
-                    });
-                    const records = await fetchData(AIRTABLE_CONFIG.tableName);
-                    const auctions = processAuctions(records);
-                    renderAuctions(auctions, openDetails);
-                } else if (activeTab === 'scambi') {
-                    const records = await fetchData(AIRTABLE_CONFIG.tradesTableName);
-                    renderTrades(records);
-                } else if (activeTab === 'proposti') {
-                    const records = await fetchData(AIRTABLE_CONFIG.proposalsTableName);
-                    renderProposals(records);
-                }
-            } finally {
-                isRefreshing = false;
-            }
+            container.innerHTML = `<div class="text-center py-8">
+                <p class="text-yellow-500 font-bold mb-2">⏳ Troppo traffico - Rate Limit attivo</p>
+                <p class="text-gray-400 text-sm">Riprovo tra <span class="text-white font-mono">${remainingTime}s</span></p>
+            </div>`;
+            return;
         }
+    }
+    
+    isRefreshing = true;
+    try {
+        if (activeTab === 'svincolati') {
+            const openDetails = new Set();
+            document.querySelectorAll('#auctionsContainer details[open]').forEach(detail => {
+                const card = detail.closest('[data-player]');
+                if (card) openDetails.add(card.dataset.player);
+            });
+            const records = await fetchData(AIRTABLE_CONFIG.tableName);
+            const auctions = processAuctions(records);
+            renderAuctions(auctions, openDetails);
+        } else if (activeTab === 'scambi') {
+            const records = await fetchData(AIRTABLE_CONFIG.tradesTableName);
+            renderTrades(records);
+        } else if (activeTab === 'proposti') {
+            const records = await fetchData(AIRTABLE_CONFIG.proposalsTableName);
+            renderProposals(records);
+        }
+    } finally {
+        isRefreshing = false;
+    }
+}
         
         document.addEventListener('DOMContentLoaded', () => {
             lucide.createIcons();

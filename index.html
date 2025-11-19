@@ -317,20 +317,6 @@
         
         // --- LOGICA GENERICA ---
 async function fetchData(tableName) {
-    // Controlla se siamo in cooldown
-    if (rateLimitActive) {
-        const remainingTime = Math.ceil((rateLimitUntil - Date.now()) / 1000);
-        if (remainingTime > 0) {
-            console.log(`⏸️ Rate limit attivo. Riprovo automaticamente tra ${remainingTime}s`);
-            return [];
-        } else {
-            // Cooldown finito, resetta
-            rateLimitActive = false;
-            rateLimitUntil = null;
-            console.log('✅ Rate limit resettato, riprendo le chiamate');
-        }
-    }
-    
     let container;
     if (activeTab === 'svincolati') {
         container = document.getElementById('auctionsContainer');
@@ -344,14 +330,11 @@ async function fetchData(tableName) {
         const url = `https://api.airtable.com/v0/${AIRTABLE_CONFIG.baseId}/${tableName}?sort[0][field]=data&sort[0][direction]=desc`;
         const response = await fetch(url, { headers: { Authorization: `Bearer ${AIRTABLE_CONFIG.readApiKey}` } });
         
-        // Gestione errore 429 (Rate Limit)
         if (response.status === 429) {
-            rateLimitActive = true;
-            rateLimitUntil = Date.now() + 35000; // 35 secondi di sicurezza
-            console.error('🚫 RATE LIMIT! Blocco tutte le chiamate per 35 secondi');
+            console.error('🚫 RATE LIMIT! Troppo traffico. Attendi 30-60 secondi e ricarica la pagina.');
             container.innerHTML = `<div class="text-center py-8">
                 <p class="text-yellow-500 font-bold mb-2">⏳ Troppo traffico</p>
-                <p class="text-gray-400 text-sm">Attendi 35 secondi...</p>
+                <p class="text-gray-400 text-sm">Ricarica la pagina tra 30 secondi</p>
             </div>`;
             return [];
         }
@@ -361,9 +344,7 @@ async function fetchData(tableName) {
         return data.records;
     } catch (error) {
         console.error("Errore nel recupero dati:", error);
-        if (!rateLimitActive) {
-            container.innerHTML = `<p class="text-red-500 text-center">Impossibile caricare i dati. Riprova più tardi.</p>`;
-        }
+        container.innerHTML = `<p class="text-red-500 text-center">Errore di connessione.</p>`;
         return [];
     }
 }
@@ -794,25 +775,28 @@ async function main() {
         return;
     }
     
-    // Se siamo in rate limit, mostra countdown
-    if (rateLimitActive && rateLimitUntil) {
-        const remainingTime = Math.ceil((rateLimitUntil - Date.now()) / 1000);
-        if (remainingTime > 0) {
-            let container;
-            if (activeTab === 'svincolati') {
-                container = document.getElementById('auctionsContainer');
-            } else if (activeTab === 'scambi') {
-                container = document.getElementById('tradesContainer');
-            } else {
-                container = document.getElementById('proposalsContainer');
-            }
-            container.innerHTML = `<div class="text-center py-8">
-                <p class="text-yellow-500 font-bold mb-2">⏳ Troppo traffico - Rate Limit attivo</p>
-                <p class="text-gray-400 text-sm">Riprovo tra <span class="text-white font-mono">${remainingTime}s</span></p>
-            </div>`;
-            return;
+    isRefreshing = true;
+    try {
+        if (activeTab === 'svincolati') {
+            const openDetails = new Set();
+            document.querySelectorAll('#auctionsContainer details[open]').forEach(detail => {
+                const card = detail.closest('[data-player]');
+                if (card) openDetails.add(card.dataset.player);
+            });
+            const records = await fetchData(AIRTABLE_CONFIG.tableName);
+            const auctions = processAuctions(records);
+            renderAuctions(auctions, openDetails);
+        } else if (activeTab === 'scambi') {
+            const records = await fetchData(AIRTABLE_CONFIG.tradesTableName);
+            renderTrades(records);
+        } else if (activeTab === 'proposti') {
+            const records = await fetchData(AIRTABLE_CONFIG.proposalsTableName);
+            renderProposals(records);
         }
+    } finally {
+        isRefreshing = false;
     }
+}
     
     isRefreshing = true;
     try {

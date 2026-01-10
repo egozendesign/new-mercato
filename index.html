@@ -15,27 +15,42 @@
     <style>
         body {
             font-family: 'Share Tech', sans-serif;
-            transition: background-color 0.3s, color 0.3s;
-        }
-        .card-shadow {
-            box-shadow: 0 4px 6px -1px rgb(0 0 0 / 0.1), 0 2px 4px -2px rgb(0 0 0 / 0.1);
-        }
-        .loader {
-            border: 4px solid #4a5568;
-            border-top: 4px solid #22c55e;
-            border-radius: 50%;
-            width: 40px;
-            height: 40px;
-            animation: spin 1s linear infinite;
-        }
-        @keyframes spin {
-            0% { transform: rotate(0deg); }
-            100% { transform: rotate(360deg); }
         }
         .tab-btn.active {
-            border-color: #22c55e;
-            color: #22c55e;
-            background-color: rgba(34, 197, 94, 0.1);
+            color: white;
+            border-color: #4ade80;
+        }
+        .card-shadow {
+            box-shadow: 0 10px 25px rgba(0, 0, 0, 0.2);
+        }
+        .scrollbar-hide::-webkit-scrollbar {
+            display: none;
+        }
+        .scrollbar-hide {
+            -ms-overflow-style: none;
+            scrollbar-width: none;
+        }
+        .fade-in {
+            animation: fadeIn 0.5s ease-in-out;
+        }
+        @keyframes fadeIn {
+            from { opacity: 0; transform: translateY(10px); }
+            to { opacity: 1; transform: translateY(0); }
+        }
+        details > summary {
+            list-style: none;
+        }
+        details > summary::-webkit-details-marker {
+            display: none;
+        }
+        .custom-select {
+            -webkit-appearance: none;
+            -moz-appearance: none;
+            appearance: none;
+            background-image: url("data:image/svg+xml;charset=UTF-8,%3csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 20 20' fill='none'%3e%3cpath d='M6 8l4 4 4-4' stroke='%239CA3AF' stroke-width='2' stroke-linecap='round' stroke-linejoin='round'/%3e%3c/svg%3e");
+            background-repeat: no-repeat;
+            background-position: right 0.75rem center;
+            background-size: 1.5em 1.5em;
         }
     </style>
 </head>
@@ -49,16 +64,31 @@
             <p class="text-gray-400 mt-2 text-lg">Stagione 2025/2026</p>
         </header>
 
+        <!-- REFRESH BAR -->
+        <div id="refreshBar" class="mb-4 flex flex-col md:flex-row md:items-center md:justify-between gap-3">
+            <div class="text-sm text-gray-400 text-center md:text-left">
+                Aggiornato: <span id="lastUpdated" class="font-mono text-gray-200">—</span>
+                <span id="refreshStatus" class="ml-2 text-gray-500"></span>
+            </div>
+            <div class="flex flex-wrap items-center justify-center md:justify-end gap-3">
+                <button id="manualRefreshBtn" type="button" class="inline-flex items-center gap-2 bg-gray-700 hover:bg-gray-600 text-white font-semibold py-2 px-3 rounded-lg transition disabled:opacity-50 disabled:cursor-not-allowed">
+                    <i data-lucide="refresh-cw" class="w-4 h-4"></i>
+                    Refresh
+                </button>
+            </div>
+        </div>
+
         <div class="mb-6 flex justify-center border-b border-gray-700">
-            <button id="tab-proposti" class="tab-btn active font-semibold py-3 px-6 border-b-2 transition">PROPOSTI</button>
-            <button id="tab-scambi" class="tab-btn text-gray-400 font-semibold py-3 px-6 border-b-2 border-transparent hover:text-white transition">SCAMBI</button>
-            <button id="tab-svincolati" class="tab-btn text-gray-400 font-semibold py-3 px-6 border-b-2 border-transparent hover:text-white transition">SVINCOLATI</button>            
+            <button id="tab-scambi" class="tab-btn active font-semibold py-3 px-6 border-b-2 transition">SCAMBI</button>
+            <button id="tab-svincolati" class="tab-btn text-gray-400 border-b-2 border-transparent hover:text-white transition">SVINCOLATI</button>
+            <button id="tab-proposti" class="tab-btn text-gray-400 border-b-2 border-transparent hover:text-white transition">PROPOSTI</button>            
         </div>
 
         <div class="grid grid-cols-1 lg:grid-cols-3 gap-8">
 
             <div class="lg:col-span-1">
-                <div id="form-svincolati-container" class="bg-gray-800 p-6 rounded-2xl card-shadow sticky top-8">
+                
+                <div id="form-svincolati-container" class="hidden bg-gray-800 p-6 rounded-2xl card-shadow sticky top-8">
                      <h2 class="text-2xl font-bold mb-4 flex items-center text-white">
                         <i data-lucide="gavel" class="mr-2"></i>
                         Offerta per Svincolato
@@ -66,159 +96,158 @@
                     <form id="svincolatiForm">
                          <div class="mb-4">
                             <label for="squadra_svincolati" class="block text-sm font-medium text-gray-300 mb-1">Seleziona squadra</label>
-                            <select id="squadra_svincolati" name="squadra" required class="w-full p-2 border border-gray-600 bg-gray-700 text-white rounded-md focus:ring-2 focus:ring-green-500 focus:border-green-500 transition">
+                            <select id="squadra_svincolati" name="squadra" required class="custom-select mt-1 block w-full px-3 py-2 bg-gray-700 border border-gray-600 rounded-lg shadow-sm focus:outline-none focus:ring-2 focus:ring-green-500 focus:border-green-500 transition">
                                 <option value="" disabled selected>- Seleziona -</option>
-                                <option value="Gonzi">Gonzi</option><option value="Chivas">Chivas</option><option value="Minturno">Minturno</option><option value="Califfo">Califfo</option><option value="BDS">BDS</option><option value="Diavolone">Diavolone</option><option value="RealSpillo">Real Spillo</option><option value="Pandamonio">Pandamonio</option><option value="SpaccioUno">SpaccioUno</option><option value="SantaMasterella">Santa Masterella</option>
+                                <option value="Gonzi">Gonzi</option><option value="Chivas">Chivas</option><option value="Cristian">Cristian</option><option value="Ego">Ego</option><option value="Fede">Fede</option><option value="Macca">Macca</option><option value="Pippo">Pippo</option><option value="Simo">Simo</option><option value="Ste">Ste</option><option value="Vinci">Vinci</option><option value="Zeta">Zeta</option>
                             </select>
                         </div>
                         <div class="mb-4">
-                            <label for="nome_svincolati" class="block text-sm font-medium text-gray-300 mb-1">Giocatore (Cognome - Squadra - Ruolo)</label>
-                            <input type="text" id="nome_svincolati" name="nome" required placeholder="Es. L.Martinez - Inter - Pc" class="w-full p-2 border border-gray-600 bg-gray-700 text-white rounded-md focus:ring-2 focus:ring-green-500 focus:border-green-500 transition">
+                            <label for="nome_svincolati" class="block text-sm font-medium text-gray-300 mb-1">Nome giocatore</label>
+                            <input type="text" id="nome_svincolati" name="nome" required placeholder="Es: Lautaro Martinez" class="mt-1 block w-full px-3 py-2 bg-gray-700 border border-gray-600 rounded-lg shadow-sm focus:outline-none focus:ring-2 focus:ring-green-500 focus:border-green-500 transition">
                         </div>
                         <div class="mb-4">
-                            <label for="offerta_svincolati" class="block text-sm font-medium text-gray-300 mb-1">Offerta (Fantamilioni)</label>
-                            <input type="number" id="offerta_svincolati" name="offerta" required min="1" placeholder="Es. 25" class="w-full p-2 border border-gray-600 bg-gray-700 text-white rounded-md focus:ring-2 focus:ring-green-500 focus:border-green-500 transition">
+                            <label for="offerta" class="block text-sm font-medium text-gray-300 mb-1">Offerta crediti</label>
+                            <input type="number" id="offerta" name="offerta" required min="1" placeholder="Es: 10" class="mt-1 block w-full px-3 py-2 bg-gray-700 border border-gray-600 rounded-lg shadow-sm focus:outline-none focus:ring-2 focus:ring-green-500 focus:border-green-500 transition">
                         </div>
-                        <div class="mb-6">
-                            <label for="password_svincolati" class="block text-sm font-medium text-gray-300 mb-1">Password Squadra</label>
-                            <input type="password" id="password_svincolati" name="password" required class="w-full p-2 border border-gray-600 bg-gray-700 text-white rounded-md focus:ring-2 focus:ring-green-500 focus:border-green-500 transition">
+                        <div class="mb-4">
+                            <label for="password_svincolati" class="block text-sm font-medium text-gray-300 mb-1">Password squadra</label>
+                            <input type="password" id="password_svincolati" name="password" required class="mt-1 block w-full px-3 py-2 bg-gray-700 border border-gray-600 rounded-lg shadow-sm focus:outline-none focus:ring-2 focus:ring-green-500 focus:border-green-500 transition">
                         </div>
-                        <button type="submit" class="w-full bg-green-600 text-white font-bold py-3 px-4 rounded-lg hover:bg-green-700 focus:outline-none focus:ring-4 focus:ring-green-500 focus:ring-opacity-50 transition-transform transform hover:scale-105">
-                            Invia Offerta
+                        <button type="submit" class="w-full bg-green-600 hover:bg-green-700 text-white font-bold py-3 px-4 rounded-lg transition duration-300 flex items-center justify-center">
+                            <i data-lucide="send" class="mr-2 w-5 h-5"></i>
+                            INVIA OFFERTA
                         </button>
-                        <div id="svincolatiFormResult" class="mt-4 text-center"></div>
+                        <div id="result_svincolati" class="mt-4 text-center font-semibold"></div>
                     </form>
                 </div>
-                
-                <div id="form-scambi-container" class="hidden bg-gray-800 p-6 rounded-2xl card-shadow sticky top-8">
+
+                <div id="form-scambi-container" class="bg-gray-800 p-6 rounded-2xl card-shadow sticky top-8">
                     <h2 class="text-2xl font-bold mb-4 flex items-center text-white">
                         <i data-lucide="repeat" class="mr-2"></i>
-                        Proponi uno Scambio
+                        Proponi uno scambio
                     </h2>
                     <form id="scambiForm">
                         <div class="mb-4">
-                            <label for="squadra_proponente" class="block text-sm font-medium text-gray-300 mb-1">La tua Squadra (che propone)</label>
-                            <select id="squadra_proponente" name="squadra_proponente" required class="w-full p-2 border border-gray-600 bg-gray-700 text-white rounded-md focus:ring-2 focus:ring-green-500 focus:border-green-500 transition">
+                            <label for="squadra_proponente" class="block text-sm font-medium text-gray-300 mb-1">Tua squadra</label>
+                            <select id="squadra_proponente" name="squadra_proponente" required class="custom-select mt-1 block w-full px-3 py-2 bg-gray-700 border border-gray-600 rounded-lg shadow-sm focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500 transition">
                                 <option value="" disabled selected>- Seleziona -</option>
-                                <option value="Gonzi">Gonzi</option><option value="Chivas">Chivas</option><option value="Minturno">Minturno</option><option value="Califfo">Califfo</option><option value="BDS">BDS</option><option value="Diavolone">Diavolone</option><option value="RealSpillo">Real Spillo</option><option value="Pandamonio">Pandamonio</option><option value="SpaccioUno">SpaccioUno</option><option value="SantaMasterella">Santa Masterella</option>
-                            </select>
-                        </div>
-                         <div class="mb-4">
-                            <label for="squadra_ricevente" class="block text-sm font-medium text-gray-300 mb-1">Squadra a cui proponi</label>
-                            <select id="squadra_ricevente" name="squadra_ricevente" required class="w-full p-2 border border-gray-600 bg-gray-700 text-white rounded-md focus:ring-2 focus:ring-green-500 focus:border-green-500 transition">
-                                <option value="" disabled selected>- Seleziona -</option>
-                               <option value="Gonzi">Gonzi</option><option value="Chivas">Chivas</option><option value="Minturno">Minturno</option><option value="Califfo">Califfo</option><option value="BDS">BDS</option><option value="Diavolone">Diavolone</option><option value="RealSpillo">Real Spillo</option><option value="Pandamonio">Pandamonio</option><option value="SpaccioUno">SpaccioUno</option><option value="SantaMasterella">Santa Masterella</option>
+                                <option value="Gonzi">Gonzi</option><option value="Chivas">Chivas</option><option value="Cristian">Cristian</option><option value="Ego">Ego</option><option value="Fede">Fede</option><option value="Macca">Macca</option><option value="Pippo">Pippo</option><option value="Simo">Simo</option><option value="Ste">Ste</option><option value="Vinci">Vinci</option><option value="Zeta">Zeta</option>
                             </select>
                         </div>
                         <div class="mb-4">
-                            <label for="giocatore_offerto" class="block text-sm font-medium text-gray-300 mb-1">Giocatore che OFFRI (Cognome - Squadra - Ruolo)</label>
-                            <input type="text" id="giocatore_offerto" name="giocatore_offerto" required placeholder="Es. L.Martinez - Inter - Pc" class="w-full p-2 border border-gray-600 bg-gray-700 text-white rounded-md focus:ring-2 focus:ring-green-500 focus:border-green-500 transition">
+                            <label for="squadra_ricevente" class="block text-sm font-medium text-gray-300 mb-1">Squadra avversaria</label>
+                            <select id="squadra_ricevente" name="squadra_ricevente" required class="custom-select mt-1 block w-full px-3 py-2 bg-gray-700 border border-gray-600 rounded-lg shadow-sm focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500 transition">
+                                <option value="" disabled selected>- Seleziona -</option>
+                                <option value="Gonzi">Gonzi</option><option value="Chivas">Chivas</option><option value="Cristian">Cristian</option><option value="Ego">Ego</option><option value="Fede">Fede</option><option value="Macca">Macca</option><option value="Pippo">Pippo</option><option value="Simo">Simo</option><option value="Ste">Ste</option><option value="Vinci">Vinci</option><option value="Zeta">Zeta</option>
+                            </select>
                         </div>
                         <div class="mb-4">
-                            <label for="giocatore_richiesto" class="block text-sm font-medium text-gray-300 mb-1">Giocatore che CHIEDI (Cognome - Squadra - Ruolo)</label>
-                            <input type="text" id="giocatore_richiesto" name="giocatore_richiesto" required placeholder="Es. Leao - Milan - A" class="w-full p-2 border border-gray-600 bg-gray-700 text-white rounded-md focus:ring-2 focus:ring-green-500 focus:border-green-500 transition">
+                            <label for="giocatore_offerto" class="block text-sm font-medium text-gray-300 mb-1">Giocatore offerto</label>
+                            <input type="text" id="giocatore_offerto" name="giocatore_offerto" required placeholder="Es: Theo Hernandez" class="mt-1 block w-full px-3 py-2 bg-gray-700 border border-gray-600 rounded-lg shadow-sm focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500 transition">
                         </div>
                         <div class="mb-4">
-                            <label for="crediti_offerti" class="block text-sm font-medium text-gray-300 mb-1">Crediti che OFFRI (opzionale)</label>
-                            <input type="number" id="crediti_offerti" name="crediti_offerti" min="0" placeholder="Es. 10" class="w-full p-2 border border-gray-600 bg-gray-700 text-white rounded-md focus:ring-2 focus:ring-green-500 focus:border-green-500 transition">
+                            <label for="crediti_offerti" class="block text-sm font-medium text-gray-300 mb-1">Crediti offerti</label>
+                            <input type="number" id="crediti_offerti" name="crediti_offerti" min="0" value="0" class="mt-1 block w-full px-3 py-2 bg-gray-700 border border-gray-600 rounded-lg shadow-sm focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500 transition">
                         </div>
-                         <div class="mb-4">
-                            <label for="crediti_richiesti" class="block text-sm font-medium text-gray-300 mb-1">Crediti che CHIEDI (opzionale)</label>
-                            <input type="number" id="crediti_richiesti" name="crediti_richiesti" min="0" placeholder="Es. 5" class="w-full p-2 border border-gray-600 bg-gray-700 text-white rounded-md focus:ring-2 focus:ring-green-500 focus:border-green-500 transition">
+                        <div class="mb-4">
+                            <label for="giocatore_richiesto" class="block text-sm font-medium text-gray-300 mb-1">Giocatore richiesto</label>
+                            <input type="text" id="giocatore_richiesto" name="giocatore_richiesto" required placeholder="Es: Leao" class="mt-1 block w-full px-3 py-2 bg-gray-700 border border-gray-600 rounded-lg shadow-sm focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500 transition">
                         </div>
-                        <div class="mb-6">
-                            <label for="password_scambi" class="block text-sm font-medium text-gray-300 mb-1">Password della tua Squadra</label>
-                            <input type="password" id="password_scambi" name="password" required class="w-full p-2 border border-gray-600 bg-gray-700 text-white rounded-md focus:ring-2 focus:ring-green-500 focus:border-green-500 transition">
+                        <div class="mb-4">
+                            <label for="crediti_richiesti" class="block text-sm font-medium text-gray-300 mb-1">Crediti richiesti</label>
+                            <input type="number" id="crediti_richiesti" name="crediti_richiesti" min="0" value="0" class="mt-1 block w-full px-3 py-2 bg-gray-700 border border-gray-600 rounded-lg shadow-sm focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500 transition">
                         </div>
-                        <button type="submit" class="w-full bg-blue-600 text-white font-bold py-3 px-4 rounded-lg hover:bg-blue-700 focus:outline-none focus:ring-4 focus:ring-blue-500 focus:ring-opacity-50 transition-transform transform hover:scale-105">
-                            Pubblica Proposta
+                        <div class="mb-4">
+                            <label for="password_scambi" class="block text-sm font-medium text-gray-300 mb-1">Password squadra</label>
+                            <input type="password" id="password_scambi" name="password" required class="mt-1 block w-full px-3 py-2 bg-gray-700 border border-gray-600 rounded-lg shadow-sm focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500 transition">
+                        </div>
+                        <button type="submit" class="w-full bg-blue-600 hover:bg-blue-700 text-white font-bold py-3 px-4 rounded-lg transition duration-300 flex items-center justify-center">
+                            <i data-lucide="send" class="mr-2 w-5 h-5"></i>
+                            INVIA SCAMBIO
                         </button>
-                        <div id="scambiFormResult" class="mt-4 text-center"></div>
+                        <div id="result_scambi" class="mt-4 text-center font-semibold"></div>
                     </form>
                 </div>
 
                 <div id="form-proposti-container" class="hidden bg-gray-800 p-6 rounded-2xl card-shadow sticky top-8">
                     <h2 class="text-2xl font-bold mb-4 flex items-center text-white">
-                        <i data-lucide="users" class="mr-2"></i>
-                        Proponi Giocatore Scambiabile
+                        <i data-lucide="shopping-bag" class="mr-2"></i>
+                        Proponi giocatore per scambi
                     </h2>
                     <form id="propostiForm">
                         <div class="mb-4">
-                            <label for="squadra_proposti" class="block text-sm font-medium text-gray-300 mb-1">Seleziona squadra</label>
-                            <select id="squadra_proposti" name="squadra" required class="w-full p-2 border border-gray-600 bg-gray-700 text-white rounded-md focus:ring-2 focus:ring-purple-500 focus:border-purple-500 transition">
+                            <label for="squadra_proposti" class="block text-sm font-medium text-gray-300 mb-1">Tua squadra</label>
+                            <select id="squadra_proposti" name="squadra" required class="custom-select mt-1 block w-full px-3 py-2 bg-gray-700 border border-gray-600 rounded-lg shadow-sm focus:outline-none focus:ring-2 focus:ring-purple-500 focus:border-purple-500 transition">
                                 <option value="" disabled selected>- Seleziona -</option>
-                                <option value="Gonzi">Gonzi</option><option value="Chivas">Chivas</option><option value="Minturno">Minturno</option><option value="Califfo">Califfo</option><option value="BDS">BDS</option><option value="Diavolone">Diavolone</option><option value="RealSpillo">Real Spillo</option><option value="Pandamonio">Pandamonio</option><option value="SpaccioUno">SpaccioUno</option><option value="SantaMasterella">Santa Masterella</option>
+                                <option value="Gonzi">Gonzi</option><option value="Chivas">Chivas</option><option value="Cristian">Cristian</option><option value="Ego">Ego</option><option value="Fede">Fede</option><option value="Macca">Macca</option><option value="Pippo">Pippo</option><option value="Simo">Simo</option><option value="Ste">Ste</option><option value="Vinci">Vinci</option><option value="Zeta">Zeta</option>
                             </select>
                         </div>
                         <div class="mb-4">
-                            <label for="nome_proposti" class="block text-sm font-medium text-gray-300 mb-1">Giocatore che proponi (Cognome - Squadra - Ruolo)</label>
-                            <input type="text" id="nome_proposti" name="nome" required placeholder="Es. L.Martinez - Inter - Pc" class="w-full p-2 border border-gray-600 bg-gray-700 text-white rounded-md focus:ring-2 focus:ring-purple-500 focus:border-purple-500 transition">
+                            <label for="nome_proposti" class="block text-sm font-medium text-gray-300 mb-1">Nome giocatore</label>
+                            <input type="text" id="nome_proposti" name="nome" required placeholder="Es: Theo Hernandez" class="mt-1 block w-full px-3 py-2 bg-gray-700 border border-gray-600 rounded-lg shadow-sm focus:outline-none focus:ring-2 focus:ring-purple-500 focus:border-purple-500 transition">
                         </div>
                         <div class="mb-4">
                             <label for="num_ruoli" class="block text-sm font-medium text-gray-300 mb-1">Quanti ruoli cerchi?</label>
-                            <select id="num_ruoli" name="num_ruoli" required class="w-full p-2 border border-gray-600 bg-gray-700 text-white rounded-md focus:ring-2 focus:ring-purple-500 focus:border-purple-500 transition">
-                                <option value="" disabled selected>- Seleziona -</option>
-                                <option value="1">1</option>
-                                <option value="2">2</option>
-                                <option value="3">3</option>
-                                <option value="4">4</option>
-                                <option value="5">5</option>
-                                <option value="6">6</option>
-                                <option value="7">7</option>
-                                <option value="8">8</option>
-                                <option value="9">9</option>
-                                <option value="10">10</option>
-                                <option value="11">11</option>
-                                <option value="12">12</option>
+                            <select id="num_ruoli" name="num_ruoli" required class="custom-select mt-1 block w-full px-3 py-2 bg-gray-700 border border-gray-600 rounded-lg shadow-sm focus:outline-none focus:ring-2 focus:ring-purple-500 focus:border-purple-500 transition">
+                                <option value="1">1 ruolo</option>
+                                <option value="2">2 ruoli</option>
+                                <option value="3">3 ruoli</option>
                             </select>
                         </div>
-                        <div id="ruoli_container" class="mb-4"></div>
-                        <div class="mb-6">
-                            <label for="password_proposti" class="block text-sm font-medium text-gray-300 mb-1">Password Squadra</label>
-                            <input type="password" id="password_proposti" name="password" required class="w-full p-2 border border-gray-600 bg-gray-700 text-white rounded-md focus:ring-2 focus:ring-purple-500 focus:border-purple-500 transition">
+
+                        <div id="ruoliContainer"></div>
+
+                        <div class="mb-4">
+                            <label for="password_proposti" class="block text-sm font-medium text-gray-300 mb-1">Password squadra</label>
+                            <input type="password" id="password_proposti" name="password" required class="mt-1 block w-full px-3 py-2 bg-gray-700 border border-gray-600 rounded-lg shadow-sm focus:outline-none focus:ring-2 focus:ring-purple-500 focus:border-purple-500 transition">
                         </div>
-                        <button type="submit" class="w-full bg-purple-600 text-white font-bold py-3 px-4 rounded-lg hover:bg-purple-700 focus:outline-none focus:ring-4 focus:ring-purple-500 focus:ring-opacity-50 transition-transform transform hover:scale-105">
-                            Pubblica Proposta
+                        <button type="submit" class="w-full bg-purple-600 hover:bg-purple-700 text-white font-bold py-3 px-4 rounded-lg transition duration-300 flex items-center justify-center">
+                            <i data-lucide="send" class="mr-2 w-5 h-5"></i>
+                            INVIA PROPOSTA
                         </button>
-                        <div id="propostiFormResult" class="mt-4 text-center"></div>
+                        <div id="result_proposti" class="mt-4 text-center font-semibold"></div>
                     </form>
                 </div>
+
             </div>
 
             <div class="lg:col-span-2">
-                <div id="content-svincolati" class="bg-gray-800 p-6 rounded-2xl card-shadow">
-                    <h2 class="text-2xl font-bold mb-1 text-white">Aste in Corso</h2>
-                    <p class="text-sm text-red-500 font-semibold mb-4">IL GIOCATORE È ASSEGNATO AL MIGLIOR OFFERENTE ALLO SCADERE DELLE 24H DALLA PRIMA OFFERTA</p>
-                    <p class="text-sm text-red-500 font-semibold mb-4">NON OFFRITE MAI PIÙ DI QUANTO AVETE<br>(se avete 3 crediti e fate 3 offerte da 1 quei crediti sono vincolati)</p>                    
-                    <div id="auctionsContainer">
-                        <div class="flex justify-center items-center py-16"><div class="loader"></div></div>
-                    </div>
+
+                <div id="content-svincolati" class="hidden bg-gray-800 p-6 rounded-2xl card-shadow">
+                    <h2 class="text-2xl md:text-3xl font-bold mb-4 flex items-center text-white">
+                        <i data-lucide="gavel" class="mr-2"></i>
+                        Aste svincolati
+                    </h2>
+                    <div id="auctionsContainer" class="space-y-4"></div>
                 </div>
 
-                <div id="content-scambi" class="hidden bg-gray-800 p-6 rounded-2xl card-shadow">
-                    <h2 class="text-2xl font-bold mb-1 text-white">Scambi Proposti</h2>
-                    <p class="text-sm text-blue-400 font-semibold mb-4">LO SCAMBIO È UFFICIALE ALLO SCADERE DELLE 24H DALLA PROPOSTA</p>
-                    <div id="tradesContainer">
-                        <div class="flex justify-center items-center py-16"><div class="loader"></div></div>
-                    </div>
+                <div id="content-scambi" class="bg-gray-800 p-6 rounded-2xl card-shadow">
+                    <h2 class="text-2xl md:text-3xl font-bold mb-4 flex items-center text-white">
+                        <i data-lucide="repeat" class="mr-2"></i>
+                        Scambi proposti
+                    </h2>
+                    <div id="tradesContainer" class="space-y-4"></div>
                 </div>
 
                 <div id="content-proposti" class="hidden bg-gray-800 p-6 rounded-2xl card-shadow">
-                    <h2 class="text-2xl font-bold mb-1 text-white">Giocatori Scambiabili</h2>
-                    <p class="text-sm text-purple-400 font-semibold mb-4">LISTA DEI GIOCATORI DISPONIBILI PER SCAMBI</p>
-                    <div id="proposalsContainer">
-                        <div class="flex justify-center items-center py-16"><div class="loader"></div></div>
-                    </div>
+                    <h2 class="text-2xl md:text-3xl font-bold mb-4 flex items-center text-white">
+                        <i data-lucide="shopping-bag" class="mr-2"></i>
+                        Giocatori proposti
+                    </h2>
+                    <div id="proposalsContainer" class="space-y-6"></div>
                 </div>
+
             </div>
         </div>
+
+        <div id="toast-container" class="fixed bottom-5 right-5 z-50 space-y-2"></div>
+
     </div>
 
     <script>
         const AUCTION_DURATION_MS = 24 * 60 * 60 * 1000;
         const AVAILABLE_ROLES = ['P', 'Dc', 'Dd', 'Ds', 'B', 'E', 'M', 'C', 'W', 'T', 'A', 'PC'];
 
-        // --- RIFERIMENTI DOM ---
         const tabSvincolati = document.getElementById('tab-svincolati');
         const tabScambi = document.getElementById('tab-scambi');
         const tabProposti = document.getElementById('tab-proposti');
@@ -228,31 +257,34 @@
         const contentSvincolati = document.getElementById('content-svincolati');
         const contentScambi = document.getElementById('content-scambi');
         const contentProposti = document.getElementById('content-proposti');
-        let activeTab = 'svincolati';
+        const lastUpdatedEl = document.getElementById('lastUpdated');
+        const refreshStatusEl = document.getElementById('refreshStatus');
+        const manualRefreshBtn = document.getElementById('manualRefreshBtn');
+        let lastSuccessfulUpdateAt = null;
+        let activeTab = 'scambi';
         let isRefreshing = false;
         let lastRequestTime = 0;
         const MIN_REQUEST_INTERVAL = 500; // Minimo 500ms tra richieste (max 2 req/sec)
 
-
-        // --- GESTIONE TAB ---
         tabSvincolati.addEventListener('click', () => switchTab('svincolati'));
         tabScambi.addEventListener('click', () => switchTab('scambi'));
         tabProposti.addEventListener('click', () => switchTab('proposti'));
 
         function switchTab(tabName) {
             activeTab = tabName;
-            
+
             tabSvincolati.classList.remove('active');
             tabScambi.classList.remove('active');
             tabProposti.classList.remove('active');
-            
+
             formSvincolati.classList.add('hidden');
             formScambi.classList.add('hidden');
             formProposti.classList.add('hidden');
+
             contentSvincolati.classList.add('hidden');
             contentScambi.classList.add('hidden');
             contentProposti.classList.add('hidden');
-            
+
             if (tabName === 'svincolati') {
                 tabSvincolati.classList.add('active');
                 formSvincolati.classList.remove('hidden');
@@ -261,65 +293,97 @@
                 tabScambi.classList.add('active');
                 formScambi.classList.remove('hidden');
                 contentScambi.classList.remove('hidden');
-            } else if (tabName === 'proposti') {
+            } else {
                 tabProposti.classList.add('active');
                 formProposti.classList.remove('hidden');
                 contentProposti.classList.remove('hidden');
             }
-            
+
             main();
         }
 
-        // --- GESTIONE RUOLI DINAMICI ---
-        const numRuoliSelect = document.getElementById('num_ruoli');
-        const ruoliContainer = document.getElementById('ruoli_container');
+        function showToast(message, type = 'success') {
+            const container = document.getElementById('toast-container');
+            const toast = document.createElement('div');
 
-        numRuoliSelect.addEventListener('change', function() {
-            const numRuoli = parseInt(this.value);
-            ruoliContainer.innerHTML = '';
-            
-            for (let i = 0; i < numRuoli; i++) {
-                const div = document.createElement('div');
-                div.className = 'mb-3';
-                div.innerHTML = `
-                    <label for="ruolo_${i}" class="block text-sm font-medium text-gray-300 mb-1">Ruolo ${i + 1}</label>
-                    <select id="ruolo_${i}" name="ruolo_${i}" required class="w-full p-2 border border-gray-600 bg-gray-700 text-white rounded-md focus:ring-2 focus:ring-purple-500 focus:border-purple-500 transition">
-                        <option value="" disabled selected>- Seleziona -</option>
-                        ${AVAILABLE_ROLES.map(role => `<option value="${role}">${role}</option>`).join('')}
-                    </select>
-                `;
-                ruoliContainer.appendChild(div);
-            }
-            
-            // Aggiungi listener per validazione duplicati
-            ruoliContainer.querySelectorAll('select').forEach(select => {
-                select.addEventListener('change', validateRoles);
-            });
-        });
+            const colors = {
+                success: 'bg-green-600',
+                error: 'bg-red-600',
+                info: 'bg-blue-600'
+            };
 
-        function validateRoles() {
-            const selects = ruoliContainer.querySelectorAll('select');
-            const selectedValues = [];
-            let hasDuplicates = false;
-            
-            selects.forEach(select => {
-                if (select.value) {
-                    if (selectedValues.includes(select.value)) {
-                        hasDuplicates = true;
-                        select.classList.add('border-red-500');
-                    } else {
-                        select.classList.remove('border-red-500');
-                        selectedValues.push(select.value);
-                    }
-                }
-            });
-            
-            return !hasDuplicates;
+            toast.className = `${colors[type]} text-white px-4 py-2 rounded-lg shadow-lg fade-in`;
+            toast.textContent = message;
+            container.appendChild(toast);
+
+            setTimeout(() => {
+                toast.style.opacity = '0';
+                setTimeout(() => toast.remove(), 500);
+            }, 3000);
         }
-        
-        // --- LOGICA GENERICA ---
+
+        function formatTimeLeft(ms) {
+            if (ms <= 0) return "00:00:00";
+            const hours = Math.floor(ms / (1000 * 60 * 60));
+            const minutes = Math.floor((ms % (1000 * 60 * 60)) / (1000 * 60));
+            const seconds = Math.floor((ms % (1000 * 60)) / 1000);
+            return `${String(hours).padStart(2, '0')}:${String(minutes).padStart(2, '0')}:${String(seconds).padStart(2, '0')}`;
+        }
+
+        function copyToClipboard(text, button) {
+            const textArea = document.createElement('textarea');
+            textArea.value = text;
+            document.body.appendChild(textArea);
+            textArea.select();
+            document.execCommand('copy');
+            document.body.removeChild(textArea);
+
+            const originalIcon = button.innerHTML;
+            button.innerHTML = '<i data-lucide="check" class="w-4 h-4 text-green-400"></i>';
+            lucide.createIcons();
+            setTimeout(() => { button.innerHTML = originalIcon; lucide.createIcons(); }, 2000);
+        }
+
+        const numRuoliSelect = document.getElementById('num_ruoli');
+        const ruoliContainer = document.getElementById('ruoliContainer');
+
+        function createRoleSelect(index) {
+            const label = document.createElement('label');
+            label.className = 'block text-sm font-medium text-gray-300 mb-1 mt-4';
+            label.textContent = `Ruolo cercato ${index + 1}`;
+
+            const select = document.createElement('select');
+            select.name = `ruolo_${index}`;
+            select.required = true;
+            select.className = 'custom-select mt-1 block w-full px-3 py-2 bg-gray-700 border border-gray-600 rounded-lg shadow-sm focus:outline-none focus:ring-2 focus:ring-purple-500 focus:border-purple-500 transition';
+
+            const options = AVAILABLE_ROLES.map(role => `<option value="${role}">${role}</option>`).join('');
+            select.innerHTML = `<option value="" disabled selected>- Seleziona -</option>${options}`;
+
+            return { label, select };
+        }
+
+        function updateRoleSelects() {
+            ruoliContainer.innerHTML = '';
+            const num = parseInt(numRuoliSelect.value, 10);
+
+            for (let i = 0; i < num; i++) {
+                const { label, select } = createRoleSelect(i);
+                ruoliContainer.appendChild(label);
+                ruoliContainer.appendChild(select);
+            }
+        }
+
+        numRuoliSelect.addEventListener('change', updateRoleSelects);
+        updateRoleSelects();
+
+        function validateUniqueRoles() {
+            const selects = ruoliContainer.querySelectorAll('select');
+            const selected = Array.from(selects).map(s => s.value).filter(Boolean);
+            return new Set(selected).size === selected.length;
+        }
+
         async function fetchData(tableName) {
-            // Rate limiting: aspetta almeno 500ms tra chiamate
             const now = Date.now();
             const timeSinceLastRequest = now - lastRequestTime;
             if (timeSinceLastRequest < MIN_REQUEST_INTERVAL) {
@@ -340,27 +404,21 @@
                 const url = `https://api.airtable.com/v0/${AIRTABLE_CONFIG.baseId}/${tableName}?sort[0][field]=data&sort[0][direction]=desc`;
                 const response = await fetch(url, { headers: { Authorization: `Bearer ${AIRTABLE_CONFIG.readApiKey}` } });
 
-if (response.status === 429) {
-    console.error('🚫 RATE LIMIT AIRTABLE! Grazie Califfo!');
-    
-    // Calcola giorni mancanti a dicembre
-    const now = new Date();
-    const nextMonth = new Date(now.getFullYear(), now.getMonth() + 1, 1);
-    const daysLeft = Math.ceil((nextMonth - now) / (1000 * 60 * 60 * 24));
-    
-    container.innerHTML = `<div class="text-center py-12 px-4">
-        <div class="text-6xl mb-4">😭</div>
-        <p class="text-red-500 font-bold mb-4 text-2xl">Siamo spiacenti ma grazie al Califfo<br>abbiamo terminato le risorse free!</p>
+                if (response.status === 429) {
+                    const now = new Date();
+                    const nextMonth = new Date(now.getFullYear(), now.getMonth() + 1, 1);
+                    const daysLeft = Math.ceil((nextMonth - now) / (1000 * 60 * 60 * 24));
+
+                    container.innerHTML = `<div class="text-center py-12 px-4">
+        <p class="text-red-500 font-bold mb-4 text-2xl">Limite chiamate API raggiunto (piano Free)</p>
         <div class="bg-gray-700 rounded-lg p-4 mb-4 inline-block">
-            <p class="text-white text-lg">Il mercato riapre tra:</p>
+            <p class="text-white text-lg">Reset tra:</p>
             <p class="text-green-400 font-bold text-4xl font-mono">${daysLeft} giorni</p>
         </div>
-        <p class="text-gray-400 text-lg mb-2">(1° Dicembre 2025)</p>
-        <p class="text-gray-500 text-sm mt-4">Nel frattempo insulta il Califfo su WhatsApp 🤬</p>
+        <p class="text-gray-400 text-sm mt-4">Le chiamate verranno sbloccate al reset mensile.</p>
     </div>`;
-    return [];
-}
-
+                    return null;
+                }
 
                 if (!response.ok) throw new Error(`Errore di rete: ${response.statusText}`);
                 const data = await response.json();
@@ -368,282 +426,41 @@ if (response.status === 429) {
             } catch (error) {
                 console.error("Errore nel recupero dati:", error);
                 container.innerHTML = `<p class="text-red-500 text-center">Impossibile caricare i dati. Riprova più tardi.</p>`;
-                return [];
+                return null;
             }
         }
-        
-        // --- LOGICA SVINCOLATI ---
-        function processAuctions(records) {
-            const auctions = {};
-            records.forEach(record => {
-                const playerName = record.fields.nome?.trim().toLowerCase();
-                if (!playerName) return;
 
-                if (!auctions[playerName]) {
-                    auctions[playerName] = {
-                        displayName: record.fields.nome.trim(),
-                        bids: [],
-                        highestBid: -1,
-                        leadingTeam: null,
-                        lastBidTimestamp: null,
-                        firstBidTimestamp: null
-                    };
-                }
-                
-                const offerta = parseInt(record.fields.offerta, 10);
-                auctions[playerName].bids.push({ team: record.fields.squadra, offer: offerta, timestamp: record.fields.data });
-            });
-
-            for (const playerName in auctions) {
-                const auction = auctions[playerName];
-                auction.bids.sort((a,b) => new Date(a.timestamp) - new Date(b.timestamp));
-                if(auction.bids.length > 0) {
-                    auction.firstBidTimestamp = auction.bids[0].timestamp;
-                    auction.lastBidTimestamp = auction.bids[auction.bids.length - 1].timestamp;
-                    
-                    let highestBid = -1;
-                    let leadingTeam = null;
-                    auction.bids.forEach(bid => {
-                        if (bid.offer > highestBid) {
-                            highestBid = bid.offer;
-                            leadingTeam = bid.team;
-                        }
-                    });
-                    auction.highestBid = highestBid;
-                    auction.leadingTeam = leadingTeam;
-                }
-            }
-            return auctions;
+        function getButtonText(formType) {
+            const texts = {
+                svincolati: 'INVIA OFFERTA',
+                scambi: 'INVIA SCAMBIO',
+                proposti: 'INVIA PROPOSTA'
+            };
+            return texts[formType] || 'INVIA';
         }
 
-        function renderAuctions(auctions, openDetails = new Set()) {
-            const container = document.getElementById('auctionsContainer');
-            container.innerHTML = '';
-            
-            const sortedKeys = Object.keys(auctions).sort((a, b) => new Date(auctions[b].lastBidTimestamp) - new Date(auctions[a].lastBidTimestamp));
-
-            if (sortedKeys.length === 0) {
-                container.innerHTML = `<p class="text-gray-400 text-center py-8"><div class="text-center py-12 px-4">
-                <p class="text-red-500 font-bold mb-4 text-2xl">Siamo spiacenti ma grazie al Califfo<br>abbiamo terminato le risorse free!</p>
-                <p class="text-gray-400 text-lg mb-2">Il mercato riapre a Febbraio 2025</p>
-                <p class="text-white-500 text-xl">Nel frattempo insulta il Califfo su WhatsApp 🤬</p>
-            </div></p>`;
-                return;
-            }
-
-            sortedKeys.forEach(playerName => {
-                const auction = auctions[playerName];
-                if (!auction.firstBidTimestamp) return;
-
-                const endDate = new Date(new Date(auction.firstBidTimestamp).getTime() + AUCTION_DURATION_MS);
-                const isExpired = (endDate - new Date()) <= 0;
-                const isDetailsOpen = openDetails.has(playerName);
-                const initialTimeDisplay = formatTimeLeft(endDate - new Date());
-
-                const card = document.createElement('div');
-                card.className = `border border-gray-700 rounded-xl p-4 mb-4 transition-all ${isExpired ? 'bg-gray-700/50 opacity-70' : 'bg-gray-800'}`;
-                card.setAttribute('data-end-time', endDate.toISOString());
-                card.setAttribute('data-player', playerName);
-
-                const historyHtml = auction.bids.map(bid => `
-                    <li class="flex justify-between items-center text-xs py-1 ${bid.offer === auction.highestBid ? 'font-bold text-green-400' : ''}">
-                        <span>${bid.team}</span>
-                        <span class="text-gray-400">${formatDate(bid.timestamp)}</span>
-                        <span>${bid.offer}</span>
-                    </li>
-                `).join('');
-
-                card.innerHTML = `
-                    <div class="grid grid-cols-3 gap-4 items-center">
-                        <div class="col-span-3 md:col-span-1">
-                            <div>
-                                <h3 class="font-bold text-lg text-white" title="${auction.displayName}">${auction.displayName}</h3>
-                                <button class="copy-btn flex items-center gap-1 mt-1 p-1 rounded-md hover:bg-gray-700" data-clipboard-text="${auction.displayName}" title="Copia nome giocatore">
-                                    <i data-lucide="copy" class="h-4 w-4 text-red-500"></i>
-                                    <span class="text-sm font-medium text-white">Copia nome giocatore</span>
-                                </button>
-                            </div>
-                            <div class="flex items-center text-green-400 font-bold text-xl mt-2">
-                                <i data-lucide="crown" class="mr-1 h-5 w-5"></i>
-                                <span>${auction.highestBid}</span>
-                                <span class="text-sm font-medium text-gray-400 ml-2">(${auction.leadingTeam})</span>
-                            </div>
-                        </div>
-                        <div class="col-span-3 md:col-span-2 text-center">
-                            ${isExpired 
-                                ? `<div class="font-bold text-lg text-white bg-green-600 rounded-lg py-2">AGGIUDICATO!</div>` 
-                                : `<div class="timer-container">
-                                        <div class="text-sm text-gray-400">Tempo Rimanente</div>
-                                        <div class="timer font-mono text-2xl font-bold tracking-tight text-white">${initialTimeDisplay}</div>
-                                   </div>`
-                            }
-                        </div>
-                    </div>
-                    <div class="mt-4 border-t border-gray-700 pt-2">
-                        <details ${isDetailsOpen ? 'open' : ''}>
-                            <summary class="text-sm font-medium cursor-pointer text-gray-400 hover:text-white">Storico Rilanci (${auction.bids.length})</summary>
-                            <ul class="mt-2 space-y-1 pr-2">${historyHtml}</ul>
-                        </details>
-                    </div>
-                `;
-                container.appendChild(card);
-            });
-            lucide.createIcons();
+        function showFormMessage(resultDiv, message, type) {
+            resultDiv.textContent = message;
+            resultDiv.className = type === 'success'
+                ? 'mt-4 text-center font-semibold text-green-400'
+                : 'mt-4 text-center font-semibold text-red-400';
         }
-        
-        // --- LOGICA SCAMBI ---
-        function renderTrades(records) {
-            const container = document.getElementById('tradesContainer');
-            container.innerHTML = '';
-
-            if (records.length === 0) {
-                container.innerHTML = `<p class="text-gray-400 text-center py-8"><div class="text-center py-12 px-4">
-                <p class="text-red-500 font-bold mb-4 text-2xl">Siamo spiacenti ma grazie al Califfo<br>abbiamo terminato le risorse free!</p>
-                <p class="text-gray-400 text-lg mb-2">Il mercato riapre a Febbraio 2025</p>
-                <p class="text-white-500 text-xl">Nel frattempo insulta il Califfo su WhatsApp 🤬</p>
-            </div></p>`;
-                return;
-            }
-
-            records.forEach(record => {
-                const trade = record.fields;
-                const endDate = new Date(new Date(trade.data).getTime() + AUCTION_DURATION_MS);
-                const isExpired = (endDate - new Date()) <= 0;
-                const initialTimeDisplay = formatTimeLeft(endDate - new Date());
-                
-                const creditiOffertiHtml = trade.crediti_offerti ? `<span class="text-green-400 font-bold">+${trade.crediti_offerti} cr</span>` : '';
-                const creditiRichiestiHtml = trade.crediti_richiesti ? `<span class="text-red-400 font-bold">-${trade.crediti_richiesti} cr</span>` : '';
-
-                const card = document.createElement('div');
-                card.className = `border border-gray-700 rounded-xl p-4 mb-4 transition-all ${isExpired ? 'bg-gray-700/50 opacity-70' : 'bg-gray-800'}`;
-                card.setAttribute('data-end-time', endDate.toISOString());
-                
-                card.innerHTML = `
-                    <div class="grid grid-cols-1 md:grid-cols-3 gap-4 items-center">
-                        <div class="md:col-span-2">
-                            <div class="flex items-center justify-between">
-                                <div class="text-center w-2/5">
-                                    <div class="font-bold text-white">${trade.squadra_proponente}</div>
-                                    <div class="text-sm text-gray-300">${trade.giocatore_offerto}</div>
-                                    <div class="text-xs">${creditiOffertiHtml}</div>
-                                </div>
-                                <i data-lucide="repeat" class="text-blue-400 w-1/5 text-center"></i>
-                                <div class="text-center w-2/5">
-                                    <div class="font-bold text-white">${trade.squadra_ricevente}</div>
-                                    <div class="text-sm text-gray-300">${trade.giocatore_richiesto}</div>
-                                    <div class="text-xs">${creditiRichiestiHtml}</div>
-                                </div>
-                            </div>
-                        </div>
-                        <div class="md:col-span-1 text-center">
-                             ${isExpired 
-                                ? `<div class="font-bold text-lg text-white bg-blue-600 rounded-lg py-2">SCAMBIO FATTO!</div>` 
-                                : `<div class="timer-container">
-                                        <div class="text-sm text-gray-400">Tempo Rimanente</div>
-                                        <div class="timer font-mono text-2xl font-bold tracking-tight text-white">${initialTimeDisplay}</div>
-                                   </div>`
-                            }
-                        </div>
-                    </div>
-                `;
-                container.appendChild(card);
-            });
-            lucide.createIcons();
-        }
-
-        // --- LOGICA PROPOSTI ---
-        function renderProposals(records) {
-            const container = document.getElementById('proposalsContainer');
-            container.innerHTML = '';
-
-            if (records.length === 0) {
-                container.innerHTML = `<p class="text-gray-400 text-center py-8"><div class="text-center py-12 px-4">
-                <p class="text-red-500 font-bold mb-4 text-2xl">Siamo spiacenti ma grazie al Califfo<br>abbiamo terminato le risorse free!</p>
-                <p class="text-gray-400 text-lg mb-2">Il mercato riapre a Febbraio 2025</p>
-                <p class="text-white-500 text-xl">Nel frattempo insulta il Califfo su WhatsApp 🤬</p>
-            </div></p>`;
-                return;
-            }
-
-            const proposalsByTeam = {};
-            records.forEach(record => {
-                const team = record.fields.squadra;
-                if (!proposalsByTeam[team]) {
-                    proposalsByTeam[team] = [];
-                }
-                proposalsByTeam[team].push(record.fields);
-            });
-
-            const sortedTeams = Object.keys(proposalsByTeam).sort();
-
-            sortedTeams.forEach(team => {
-                const teamProposals = proposalsByTeam[team];
-                
-                const card = document.createElement('div');
-                card.className = 'border border-gray-700 rounded-xl p-4 mb-4 bg-gray-800';
-                
-                const playersHtml = teamProposals.map(proposal => {
-                    const roles = proposal.ruolo_cercato ? proposal.ruolo_cercato.split(',').map(r => r.trim()) : [];
-                    const roleColors = {
-                        'P': 'bg-yellow-600', 'Dc': 'bg-green-600', 'Dd': 'bg-green-500', 
-                        'Ds': 'bg-green-400', 'B': 'bg-green-600', 'E': 'bg-blue-600',
-                        'M': 'bg-blue-600', 'C': 'bg-blue-600', 'W': 'bg-purple-600',
-                        'T': 'bg-purple-600', 'A': 'bg-red-600', 'PC': 'bg-red-600'
-                    };
-
-                    const rolesHtml = roles.map(role => 
-                        `<span class="${roleColors[role] || 'bg-purple-600'} text-white px-2 py-1 rounded-full font-bold text-xs">${role}</span>`
-                    ).join(' ');
-                    
-                    return `
-                        <div class="flex justify-between items-center py-2 border-b border-gray-700 last:border-b-0">
-                            <div class="flex-1">
-                                <div class="font-bold text-white">${proposal.nome}</div>
-                                <div class="text-xs text-gray-400">${formatDate(proposal.data)}</div>
-                            </div>
-                            <div class="flex items-center gap-2 flex-wrap justify-end">
-                                <span class="text-sm text-gray-400">Cerca:</span>
-                                ${rolesHtml}
-                            </div>
-                        </div>
-                    `;
-                }).join('');
-                
-                card.innerHTML = `
-                    <div class="mb-3">
-                        <h3 class="text-xl font-bold text-white flex items-center">
-                            <i data-lucide="users" class="mr-2 h-5 w-5 text-purple-400"></i>
-                            ${team}
-                            <span class="ml-2 text-sm font-normal text-gray-400">(${teamProposals.length} giocator${teamProposals.length > 1 ? 'i' : 'e'})</span>
-                        </h3>
-                    </div>
-                    <div class="space-y-1">
-                        ${playersHtml}
-                    </div>
-                `;
-                container.appendChild(card);
-            });
-            lucide.createIcons();
-        }
-
-        // --- GESTIONE FORM ---
-        document.getElementById('svincolatiForm').addEventListener('submit', (e) => handleFormSubmit(e, 'svincolati'));
-        document.getElementById('scambiForm').addEventListener('submit', (e) => handleFormSubmit(e, 'scambi'));
-        document.getElementById('propostiForm').addEventListener('submit', (e) => handleFormSubmit(e, 'proposti'));
 
         async function handleFormSubmit(event, formType) {
             event.preventDefault();
             const form = event.target;
+            const resultDiv = document.getElementById(`result_${formType}`);
             const submitButton = form.querySelector('button[type="submit"]');
-            const resultDiv = document.getElementById(`${formType}FormResult`);
-            
+
             submitButton.disabled = true;
             submitButton.textContent = 'Invio...';
+
+            showFormMessage(resultDiv, '', 'success');
 
             const formData = new FormData(form);
             const password = formData.get('password');
             let squadra;
-            
+
             if (formType === 'svincolati') {
                 squadra = formData.get('squadra');
             } else if (formType === 'scambi') {
@@ -658,15 +475,16 @@ if (response.status === 429) {
                 submitButton.textContent = getButtonText(formType);
                 return;
             }
-            
+
             let fields = {};
             let tableName;
-            
+
             if (formType === 'svincolati') {
-                fields = { 
-                    squadra: formData.get('squadra'), 
-                    nome: formData.get('nome'), 
-                    offerta: formData.get('offerta') 
+                fields = {
+                    squadra: formData.get('squadra'),
+                    nome: formData.get('nome'),
+                    offerta: parseInt(formData.get('offerta'), 10),
+                    data: new Date().toISOString()
                 };
                 tableName = AIRTABLE_CONFIG.tableName;
             } else if (formType === 'scambi') {
@@ -674,96 +492,270 @@ if (response.status === 429) {
                     squadra_proponente: formData.get('squadra_proponente'),
                     squadra_ricevente: formData.get('squadra_ricevente'),
                     giocatore_offerto: formData.get('giocatore_offerto'),
+                    crediti_offerti: parseInt(formData.get('crediti_offerti') || '0', 10),
                     giocatore_richiesto: formData.get('giocatore_richiesto'),
-                    crediti_offerti: parseInt(formData.get('crediti_offerti'), 10) || null,
-                    crediti_richiesti: parseInt(formData.get('crediti_richiesti'), 10) || null,
+                    crediti_richiesti: parseInt(formData.get('crediti_richiesti') || '0', 10),
+                    data: new Date().toISOString()
                 };
                 tableName = AIRTABLE_CONFIG.tradesTableName;
             } else {
-                if (!validateRoles()) {
-                    showFormMessage(resultDiv, 'Non puoi selezionare lo stesso ruolo due volte!', 'error');
+                if (!validateUniqueRoles()) {
+                    showFormMessage(resultDiv, 'Errore: ruoli duplicati.', 'error');
                     submitButton.disabled = false;
                     submitButton.textContent = getButtonText(formType);
                     return;
                 }
-                
-                const numRuoli = parseInt(formData.get('num_ruoli'));
+
+                const numRuoli = parseInt(formData.get('num_ruoli'), 10);
                 const selectedRoles = [];
                 for (let i = 0; i < numRuoli; i++) {
-                    const role = formData.get(`ruolo_${i}`);
-                    if (role) selectedRoles.push(role);
+                    selectedRoles.push(formData.get(`ruolo_${i}`));
                 }
-                
+
                 fields = {
                     squadra: formData.get('squadra'),
                     nome: formData.get('nome'),
-                    ruolo_cercato: selectedRoles.join(', ')
+                    ruolo_cercato: selectedRoles.join(', '),
+                    data: new Date().toISOString()
                 };
                 tableName = AIRTABLE_CONFIG.proposalsTableName;
             }
 
             try {
-                const response = await fetch(`https://api.airtable.com/v0/${AIRTABLE_CONFIG.baseId}/${tableName}`, {
+                const url = `https://api.airtable.com/v0/${AIRTABLE_CONFIG.baseId}/${tableName}`;
+                const response = await fetch(url, {
                     method: 'POST',
-                    headers: { 'Authorization': `Bearer ${AIRTABLE_CONFIG.writeApiKey}`, 'Content-Type': 'application/json' },
+                    headers: {
+                        Authorization: `Bearer ${AIRTABLE_CONFIG.writeApiKey}`,
+                        'Content-Type': 'application/json'
+                    },
                     body: JSON.stringify({ fields })
                 });
 
-                if (!response.ok) {
-                    const errorBody = await response.json();
-                    console.error('Errore da Airtable:', errorBody);
-                    throw new Error('Errore durante l\'invio.');
-                }
-                
-                showFormMessage(resultDiv, 'Proposta inviata!', 'success');
-                form.reset();
-                if (formType === 'proposti') {
-                    ruoliContainer.innerHTML = '';
-                }
-                await main();
+                if (!response.ok) throw new Error(`Errore di rete: ${response.statusText}`);
 
+                showFormMessage(resultDiv, 'Operazione inviata!', 'success');
+                form.reset();
+                if (formType === 'proposti') updateRoleSelects();
+
+                await main();
             } catch (error) {
                 console.error('Errore invio dati:', error);
-                showFormMessage(resultDiv, 'Errore durante l\'invio.', 'error');
+                showFormMessage(resultDiv, 'Errore durante l’invio.', 'error');
             } finally {
                 submitButton.disabled = false;
                 submitButton.textContent = getButtonText(formType);
             }
         }
-        
-        function getButtonText(formType) {
-            if (formType === 'svincolati') return 'Invia Offerta';
-            if (formType === 'scambi') return 'Pubblica Proposta';
-            return 'Pubblica Proposta';
-        }
-        
-        function showFormMessage(element, message, type) {
-            element.textContent = message;
-            element.className = `mt-4 text-center text-sm font-medium ${type === 'success' ? 'text-green-500' : 'text-red-500'}`;
-            setTimeout(() => { element.textContent = ''; }, 4000);
+
+        document.getElementById('svincolatiForm').addEventListener('submit', (e) => handleFormSubmit(e, 'svincolati'));
+        document.getElementById('scambiForm').addEventListener('submit', (e) => handleFormSubmit(e, 'scambi'));
+        document.getElementById('propostiForm').addEventListener('submit', (e) => handleFormSubmit(e, 'proposti'));
+
+        function processAuctions(records) {
+            const auctions = {};
+
+            records.forEach(record => {
+                const playerName = record.fields.nome?.trim().toLowerCase();
+                if (!playerName) return;
+
+                if (!auctions[playerName]) {
+                    auctions[playerName] = {
+                        displayName: record.fields.nome.trim(),
+                        bids: [],
+                        highestBid: -1,
+                        leadingTeam: null,
+                        lastBidTimestamp: null,
+                        firstBidTimestamp: null
+                    };
+                }
+
+                const offerta = parseInt(record.fields.offerta, 10);
+                auctions[playerName].bids.push({ team: record.fields.squadra, offer: offerta, timestamp: record.fields.data });
+            });
+
+            for (const playerName in auctions) {
+                const auction = auctions[playerName];
+                auction.bids.sort((a, b) => new Date(b.timestamp) - new Date(a.timestamp));
+
+                auction.lastBidTimestamp = auction.bids[0].timestamp;
+                auction.firstBidTimestamp = auction.bids[auction.bids.length - 1].timestamp;
+
+                auction.bids.forEach(bid => {
+                    if (bid.offer > auction.highestBid) {
+                        auction.highestBid = bid.offer;
+                        auction.leadingTeam = bid.team;
+                    }
+                });
+            }
+
+            return auctions;
         }
 
-        // --- UTILS ---
-        function copyToClipboard(text, buttonElement) {
-            const tempTextarea = document.createElement('textarea');
-            tempTextarea.value = text;
-            document.body.appendChild(tempTextarea);
-            tempTextarea.select();
-            try {
-                document.execCommand('copy');
-                const originalContent = buttonElement.innerHTML;
-                buttonElement.innerHTML = `
-                    <i data-lucide="check" class="h-4 w-4 text-green-400"></i>
-                    <span class="text-sm font-medium text-white">Copiato!</span>`;
-                lucide.createIcons();
-                setTimeout(() => {
-                    buttonElement.innerHTML = originalContent;
-                    lucide.createIcons();
-                }, 1500);
-            } catch (err) {
-                console.error('Impossibile copiare il testo:', err);
+        function renderAuctions(auctions, openDetails) {
+            const container = document.getElementById('auctionsContainer');
+            container.innerHTML = '';
+
+            const now = new Date();
+
+            const sortedKeys = Object.keys(auctions).sort((a, b) => {
+                const timeA = new Date(auctions[a].lastBidTimestamp);
+                const timeB = new Date(auctions[b].lastBidTimestamp);
+                return timeB - timeA;
+            });
+
+            if (sortedKeys.length === 0) {
+                container.innerHTML = `<p class="text-gray-400 text-center">Nessuna asta in corso.</p>`;
+                return;
             }
-            document.body.removeChild(tempTextarea);
+
+            sortedKeys.forEach(playerName => {
+                const auction = auctions[playerName];
+                const startDate = new Date(auction.firstBidTimestamp);
+                const endDate = new Date(startDate.getTime() + AUCTION_DURATION_MS);
+                const timeLeft = endDate - now;
+                const isExpired = timeLeft <= 0;
+
+                const card = document.createElement('div');
+                card.className = `border border-gray-700 rounded-xl p-4 card-shadow transition-all ${isExpired ? 'bg-gray-700/50 opacity-70' : 'bg-gray-800'}`;
+                card.setAttribute('data-end-time', endDate.toISOString());
+                card.setAttribute('data-player', playerName);
+
+                const historyHtml = auction.bids.map(bid => `
+                    <li class="flex justify-between items-center border-b border-gray-700 last:border-0 py-2 text-sm">
+                        <span>${bid.team}</span>
+                        <span class="text-gray-400">${formatDate(bid.timestamp)}</span>
+                        <span class="font-bold">${bid.offer}</span>
+                    </li>
+                `).join('');
+
+                card.innerHTML = `
+                    <div class="grid grid-cols-1 md:grid-cols-3 gap-4 items-center">
+                        <div class="md:col-span-2">
+                            <h3 class="text-xl font-bold text-white flex items-center">
+                                ${auction.displayName}
+                                <button class="copy-btn ml-3 text-gray-400 hover:text-green-400 transition" data-clipboard-text="${auction.displayName}">
+                                    <i data-lucide="copy" class="w-4 h-4"></i>
+                                </button>
+                            </h3>
+                            <p class="text-gray-400 mt-1">Offerta più alta: <span class="font-bold text-green-400">${auction.highestBid}</span> (${auction.leadingTeam})</p>
+                        </div>
+                        <div class="text-right">
+                            <p class="text-sm text-gray-400">Scade tra:</p>
+                            <p class="timer text-2xl font-mono font-bold">${formatTimeLeft(timeLeft)}</p>
+                        </div>
+                    </div>
+
+                    <details class="mt-4">
+                        <summary class="cursor-pointer text-gray-400 hover:text-white transition flex items-center justify-between">
+                            <span>Storico offerte</span>
+                            <i data-lucide="chevron-down" class="w-5 h-5"></i>
+                        </summary>
+                        <ul class="mt-3 space-y-2 max-h-48 overflow-y-auto scrollbar-hide pr-2">
+                            ${historyHtml}
+                        </ul>
+                    </details>
+                `;
+
+                const detailsEl = card.querySelector('details');
+                if (openDetails.has(playerName)) {
+                    detailsEl.open = true;
+                }
+
+                container.appendChild(card);
+            });
+
+            lucide.createIcons();
+        }
+
+        function renderTrades(records) {
+            const container = document.getElementById('tradesContainer');
+            container.innerHTML = '';
+
+            const now = new Date();
+
+            if (!records || records.length === 0) {
+                container.innerHTML = `<p class="text-gray-400 text-center">Nessuno scambio proposto.</p>`;
+                return;
+            }
+
+            records.forEach(record => {
+                const fields = record.fields;
+                const startDate = new Date(fields.data);
+                const endDate = new Date(startDate.getTime() + AUCTION_DURATION_MS);
+                const timeLeft = endDate - now;
+                const isExpired = timeLeft <= 0;
+
+                const card = document.createElement('div');
+                card.className = `border border-gray-700 rounded-xl p-4 card-shadow transition-all ${isExpired ? 'bg-gray-700/50 opacity-70' : 'bg-gray-800'}`;
+                card.setAttribute('data-end-time', endDate.toISOString());
+
+                card.innerHTML = `
+                    <div class="grid grid-cols-1 md:grid-cols-3 gap-4 items-center">
+                        <div class="md:col-span-2">
+                            <p class="text-sm text-gray-400 mb-1">${fields.squadra_proponente} -> ${fields.squadra_ricevente}</p>
+                            <p class="text-white"><span class="font-bold text-blue-400">Offre:</span> ${fields.giocatore_offerto} (${fields.crediti_offerti || 0} cr)</p>
+                            <p class="text-white"><span class="font-bold text-purple-400">Chiede:</span> ${fields.giocatore_richiesto} (${fields.crediti_richiesti || 0} cr)</p>
+                        </div>
+                        <div class="text-right">
+                            <p class="text-sm text-gray-400">Scade tra:</p>
+                            <p class="timer text-2xl font-mono font-bold">${formatTimeLeft(timeLeft)}</p>
+                        </div>
+                    </div>
+                `;
+
+                container.appendChild(card);
+            });
+
+            lucide.createIcons();
+        }
+
+        function renderProposals(records) {
+            const container = document.getElementById('proposalsContainer');
+            container.innerHTML = '';
+
+            const grouped = {};
+
+            records.forEach(record => {
+                const team = record.fields.squadra;
+                if (!grouped[team]) grouped[team] = [];
+                grouped[team].push(record);
+            });
+
+            const teams = Object.keys(grouped).sort();
+
+            if (teams.length === 0) {
+                container.innerHTML = `<p class="text-gray-400 text-center">Nessun giocatore proposto.</p>`;
+                return;
+            }
+
+            teams.forEach(team => {
+                const card = document.createElement('div');
+                card.className = 'border border-gray-700 rounded-xl p-4 card-shadow bg-gray-800';
+
+                const playersHtml = grouped[team].map(record => `
+                    <div class="flex justify-between items-center border-b border-gray-700 last:border-0 py-2">
+                        <div>
+                            <p class="text-white font-bold">${record.fields.nome}</p>
+                            <p class="text-sm text-gray-400">Cerca: <span class="text-purple-400 font-bold">${record.fields.ruolo_cercato}</span></p>
+                        </div>
+                        <button class="copy-btn text-gray-400 hover:text-green-400 transition" data-clipboard-text="${record.fields.nome}">
+                            <i data-lucide="copy" class="w-4 h-4"></i>
+                        </button>
+                    </div>
+                `).join('');
+
+                card.innerHTML = `
+                    <h3 class="text-xl font-bold text-white">${team}</h3>
+                    <div class="space-y-1">
+                        ${playersHtml}
+                    </div>
+                `;
+
+                container.appendChild(card);
+            });
+
+            lucide.createIcons();
         }
 
         function formatDate(dateTimeString) {
@@ -772,39 +764,43 @@ if (response.status === 429) {
             return date.toLocaleString('it-IT', { day: '2-digit', month: '2-digit', hour: '2-digit', minute: '2-digit' });
         }
 
-        function formatTimeLeft(ms) {
-            if (ms <= 0) return "00:00:00";
-            const hours = Math.floor(ms / (1000 * 60 * 60)).toString().padStart(2, '0');
-            const minutes = Math.floor((ms / 1000 / 60) % 60).toString().padStart(2, '0');
-            const seconds = Math.floor((ms / 1000) % 60).toString().padStart(2, '0');
-            return `${hours}:${minutes}:${seconds}`;
+        function updateRefreshBar() {
+            if (lastUpdatedEl) {
+                lastUpdatedEl.textContent = lastSuccessfulUpdateAt ? formatDate(lastSuccessfulUpdateAt) : '—';
+            }
+            if (refreshStatusEl) {
+                refreshStatusEl.textContent = isRefreshing ? '(caricamento...)' : '';
+            }
+            if (manualRefreshBtn) {
+                manualRefreshBtn.disabled = isRefreshing;
+            }
         }
-        
+
         function updateTimers() {
             document.querySelectorAll('[data-end-time]').forEach(card => {
                 const timerEl = card.querySelector('.timer');
-                if(!timerEl) return;
+                if (!timerEl) return;
 
                 const endTime = new Date(card.dataset.endTime);
                 const timeLeft = endTime - new Date();
 
                 if (timeLeft <= 0) {
                     timerEl.textContent = "00:00:00";
-                    if (!card.classList.contains('opacity-70')) { main(); }
+                    card.classList.add('opacity-70');
                 } else {
                     timerEl.textContent = formatTimeLeft(timeLeft);
                 }
             });
         }
-        
-        // --- INIZIALIZZAZIONE ---
+
         async function main() {
             if (isRefreshing) {
-                console.log('⏸️ Refresh già in corso, salto questa chiamata');
                 return;
             }
 
             isRefreshing = true;
+            updateRefreshBar();
+
             try {
                 if (activeTab === 'svincolati') {
                     const openDetails = new Set();
@@ -812,25 +808,46 @@ if (response.status === 429) {
                         const card = detail.closest('[data-player]');
                         if (card) openDetails.add(card.dataset.player);
                     });
+
                     const records = await fetchData(AIRTABLE_CONFIG.tableName);
+                    if (records === null) return;
+
                     const auctions = processAuctions(records);
                     renderAuctions(auctions, openDetails);
+                    lastSuccessfulUpdateAt = new Date();
+                    updateRefreshBar();
+
                 } else if (activeTab === 'scambi') {
                     const records = await fetchData(AIRTABLE_CONFIG.tradesTableName);
+                    if (records === null) return;
+
                     renderTrades(records);
+                    lastSuccessfulUpdateAt = new Date();
+                    updateRefreshBar();
+
                 } else if (activeTab === 'proposti') {
                     const records = await fetchData(AIRTABLE_CONFIG.proposalsTableName);
+                    if (records === null) return;
+
                     renderProposals(records);
+                    lastSuccessfulUpdateAt = new Date();
+                    updateRefreshBar();
                 }
             } finally {
                 isRefreshing = false;
+                updateRefreshBar();
             }
         }
-        
+
         document.addEventListener('DOMContentLoaded', () => {
             lucide.createIcons();
-            switchTab('proposti');
-            setInterval(main, 30000);
+
+            if (manualRefreshBtn) {
+                manualRefreshBtn.addEventListener('click', () => main());
+            }
+
+            updateRefreshBar();
+            switchTab('scambi');
             setInterval(updateTimers, 1000);
 
             document.body.addEventListener('click', function(event) {

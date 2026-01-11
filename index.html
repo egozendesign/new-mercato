@@ -56,9 +56,13 @@
             <div class="flex items-center justify-center md:justify-end">
                 <button id="manualRefreshBtn" type="button" class="bg-gray-700 hover:bg-gray-600 text-white font-semibold py-2 px-4 rounded-lg transition flex items-center gap-2 disabled:opacity-50 disabled:cursor-not-allowed">
                     <i data-lucide="refresh-cw" class="w-4 h-4"></i>
-                    Refresh
+                    <span id="manualRefreshLabel">Refresh</span>
                 </button>
             </div>
+        </div>
+
+        <div id="refreshDisclaimer" class="mb-6 text-xs text-gray-500 text-center md:text-left">
+            Refresh limitato per evitare blocchi Airtable: attesa 30s tra i refresh, max 10 refresh ogni 10 minuti. In caso di abuso o limite API, gli aggiornamenti vengono bloccati per alcuni minuti.
         </div>
 
         <div class="mb-6 flex justify-center gap-6 border-b border-gray-700">
@@ -247,7 +251,140 @@
 
         const lastUpdatedEl = document.getElementById('lastUpdated');
         const manualRefreshBtn = document.getElementById('manualRefreshBtn');
+        const manualRefreshLabel = document.getElementById('manualRefreshLabel');
         let lastSuccessfulUpdateAt = null;
+
+        // --- REFRESH GUARD (anti-spam) ---
+        const REFRESH_COOLDOWN_MS = 30 * 1000;                 // 30s
+        const REFRESH_QUOTA_MAX = 10;                          // 10 refresh
+        const REFRESH_QUOTA_WINDOW_MS = 10 * 60 * 1000;        // 10 min
+        const AIRTABLE_LOCK_BASE_MS = 5 * 60 * 1000;           // 5 min
+        const AIRTABLE_LOCK_MAX_MS = 60 * 60 * 1000;           // cap 60 min
+        const AIRTABLE_LOCK_RESET_MS = 24 * 60 * 60 * 1000;    // reset escalation after 24h
+
+        const LS_KEYS = {
+            cooldownUntil: 'refresh_cooldown_until',
+            quotaEvents: 'refresh_quota_events',
+            airtableLockUntil: 'airtable_lock_until',
+            airtableLockStrikes: 'airtable_lock_strikes'
+        };
+
+        function lsGetNumber(key, fallback = 0) {
+            const raw = localStorage.getItem(key);
+            const n = raw ? parseInt(raw, 10) : NaN;
+            return Number.isFinite(n) ? n : fallback;
+        }
+
+        function lsSetNumber(key, value) {
+            localStorage.setItem(key, String(value));
+        }
+
+        function lsGetJson(key, fallback) {
+            const raw = localStorage.getItem(key);
+            if (!raw) return fallback;
+            try { return JSON.parse(raw); } catch { return fallback; }
+        }
+
+        function lsSetJson(key, value) {
+            localStorage.setItem(key, JSON.stringify(value));
+        }
+
+        function nowMs() { return Date.now(); }
+
+        function getAirtableLockRemainingMs() {
+            const until = lsGetNumber(LS_KEYS.airtableLockUntil, 0);
+            return Math.max(0, until - nowMs());
+        }
+
+        function pruneQuotaEvents(events) {
+            const cutoff = nowMs() - REFRESH_QUOTA_WINDOW_MS;
+            return (Array.isArray(events) ? events : []).filter(ts => typeof ts === 'number' && ts >= cutoff);
+        }
+
+        function getQuotaRemainingMs() {
+            const events = pruneQuotaEvents(lsGetJson(LS_KEYS.quotaEvents, []));
+            if (events.length < REFRESH_QUOTA_MAX) return 0;
+
+            const oldest = Math.min(...events);
+            const unlockAt = oldest + REFRESH_QUOTA_WINDOW_MS;
+            return Math.max(0, unlockAt - nowMs());
+        }
+
+        function getCooldownRemainingMs() {
+            const until = lsGetNumber(LS_KEYS.cooldownUntil, 0);
+            return Math.max(0, until - nowMs());
+        }
+
+        function formatMmSs(ms) {
+            const totalSeconds = Math.ceil(ms / 1000);
+            const m = Math.floor(totalSeconds / 60);
+            const s = totalSeconds % 60;
+            return m > 0 ? `${m}:${String(s).padStart(2, '0')}` : `${s}s`;
+        }
+
+        function getManualRefreshBlock() {
+            const airtableLock = getAirtableLockRemainingMs();
+            if (airtableLock > 0) return { blocked: true, reason: 'Lock Airtable', remainingMs: airtableLock };
+
+            const quota = getQuotaRemainingMs();
+            if (quota > 0) return { blocked: true, reason: 'Quota', remainingMs: quota };
+
+            const cooldown = getCooldownRemainingMs();
+            if (cooldown > 0) return { blocked: true, reason: 'Cooldown', remainingMs: cooldown };
+
+            return { blocked: false, reason: '', remainingMs: 0 };
+        }
+
+        function registerManualRefreshAttempt() {
+            lsSetNumber(LS_KEYS.cooldownUntil, nowMs() + REFRESH_COOLDOWN_MS);
+
+            const events = pruneQuotaEvents(lsGetJson(LS_KEYS.quotaEvents, []));
+            events.push(nowMs());
+            lsSetJson(LS_KEYS.quotaEvents, events);
+        }
+
+        function applyAirtableLock() {
+            const strikes = lsGetJson(LS_KEYS.airtableLockStrikes, { count: 0, lastTs: 0 });
+            const now = nowMs();
+
+            let count = typeof strikes.count === 'number' ? strikes.count : 0;
+            const lastTs = typeof strikes.lastTs === 'number' ? strikes.lastTs : 0;
+
+            if (!lastTs || (now - lastTs) > AIRTABLE_LOCK_RESET_MS) {
+                count = 0;
+            }
+
+            count += 1;
+            const lockMs = Math.min(AIRTABLE_LOCK_BASE_MS * Math.pow(2, count - 1), AIRTABLE_LOCK_MAX_MS);
+            const lockUntil = now + lockMs;
+
+            lsSetJson(LS_KEYS.airtableLockStrikes, { count, lastTs: now });
+            lsSetNumber(LS_KEYS.airtableLockUntil, lockUntil);
+
+            return lockUntil;
+        }
+
+        function updateManualRefreshUI() {
+            if (!manualRefreshBtn || !manualRefreshLabel) return;
+
+            const block = getManualRefreshBlock();
+            const disabled = isRefreshing || block.blocked;
+
+            manualRefreshBtn.disabled = disabled;
+
+            if (block.blocked) {
+                manualRefreshLabel.textContent = `Refresh (${formatMmSs(block.remainingMs)})`;
+                manualRefreshBtn.title = block.reason === 'Quota'
+                    ? 'Limite: max 10 refresh ogni 10 minuti'
+                    : block.reason === 'Cooldown'
+                        ? 'Attendi 30s tra un refresh e l’altro'
+                        : 'Blocco temporaneo per limite API Airtable';
+            } else {
+                manualRefreshLabel.textContent = 'Refresh';
+                manualRefreshBtn.title = 'Aggiorna manualmente i dati';
+            }
+        }
+
 
         function updateRefreshBar() {
             if (lastUpdatedEl) {
@@ -255,9 +392,7 @@
                     ? lastSuccessfulUpdateAt.toLocaleString('it-IT', { day: '2-digit', month: '2-digit', hour: '2-digit', minute: '2-digit' })
                     : '—';
             }
-            if (manualRefreshBtn) {
-                manualRefreshBtn.disabled = isRefreshing;
-            }
+            updateManualRefreshUI();
         }
 
 
@@ -369,6 +504,8 @@
 
 if (response.status === 429) {
     console.error('🚫 RATE LIMIT AIRTABLE! Grazie Califfo!');
+    applyAirtableLock();
+    updateRefreshBar();
     
     // Calcola giorni mancanti a dicembre
     const now = new Date();
@@ -748,7 +885,7 @@ if (response.status === 429) {
                 if (formType === 'proposti') {
                     ruoliContainer.innerHTML = '';
                 }
-                await main();
+                await main('submit');
 
             } catch (error) {
                 console.error('Errore invio dati:', error);
@@ -837,10 +974,26 @@ if (response.status === 429) {
         }
         
         // --- INIZIALIZZAZIONE ---
-        async function main() {
+        async function main(trigger = 'auto') {
             if (isRefreshing) {
                 console.log('⏸️ Refresh già in corso, salto questa chiamata');
                 return;
+            }
+
+            const airtableLockRemaining = getAirtableLockRemainingMs();
+            if (airtableLockRemaining > 0) {
+                updateRefreshBar();
+                return;
+            }
+
+            if (trigger === 'manual') {
+                const block = getManualRefreshBlock();
+                if (block.blocked) {
+                    updateRefreshBar();
+                    return;
+                }
+                registerManualRefreshAttempt();
+                updateRefreshBar();
             }
 
             isRefreshing = true;
@@ -874,9 +1027,11 @@ if (response.status === 429) {
         document.addEventListener('DOMContentLoaded', () => {
             lucide.createIcons();
             switchTab('scambi');
-            main();
+            main('auto');
             updateRefreshBar();
-            if (manualRefreshBtn) manualRefreshBtn.addEventListener('click', () => main());
+            setInterval(updateManualRefreshUI, 1000);
+
+            if (manualRefreshBtn) manualRefreshBtn.addEventListener('click', () => main('manual'));
             setInterval(updateTimers, 1000);
 
             document.body.addEventListener('click', function(event) {

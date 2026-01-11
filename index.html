@@ -270,7 +270,10 @@
             airtableLockUntil: 'airtable_lock_until',
             airtableLockStrikes: 'airtable_lock_strikes',
             autoFetchCooldownUntil: 'auto_fetch_cooldown_until',
-            lastSuccessfulUpdateAtMs: 'last_successful_update_at_ms'
+            lastSuccessfulUpdateAtMs: 'last_successful_update_at_ms',
+            cacheSvincolati: 'data_cache_svincolati',
+            cacheScambi: 'data_cache_scambi',
+            cacheProposti: 'data_cache_proposti'
         };
 
         function lsGetNumber(key, fallback = 0) {
@@ -291,6 +294,40 @@
 
         function lsSetJson(key, value) {
             localStorage.setItem(key, JSON.stringify(value));
+        }
+
+
+        function getCacheKeyForTab(tabName) {
+            if (tabName === 'svincolati') return LS_KEYS.cacheSvincolati;
+            if (tabName === 'scambi') return LS_KEYS.cacheScambi;
+            return LS_KEYS.cacheProposti;
+        }
+
+        function saveTabCache(tabName, records) {
+            const key = getCacheKeyForTab(tabName);
+            lsSetJson(key, Array.isArray(records) ? records : []);
+        }
+
+        function loadTabCache(tabName) {
+            const key = getCacheKeyForTab(tabName);
+            const records = lsGetJson(key, null);
+            return Array.isArray(records) ? records : null;
+        }
+
+        function hydrateAllFromCache() {
+            const sv = loadTabCache('svincolati');
+            if (sv) {
+                const auctions = processAuctions(sv);
+                renderAuctions(auctions, new Set());
+            }
+
+            const sc = loadTabCache('scambi');
+            if (sc) renderTrades(sc);
+
+            const pr = loadTabCache('proposti');
+            if (pr) renderProposals(pr);
+
+            updateRefreshBar();
         }
 
         function nowMs() { return Date.now(); }
@@ -492,7 +529,19 @@
         }
         
         // --- LOGICA GENERICA ---
-        async function fetchData(tableName) {
+        function getContainerForTab(tabName) {
+            if (tabName === 'svincolati') return document.getElementById('auctionsContainer');
+            if (tabName === 'scambi') return document.getElementById('tradesContainer');
+            return document.getElementById('proposalsContainer');
+        }
+
+        function getTableNameForTab(tabName) {
+            if (tabName === 'svincolati') return AIRTABLE_CONFIG.tableName;
+            if (tabName === 'scambi') return AIRTABLE_CONFIG.tradesTableName;
+            return AIRTABLE_CONFIG.proposalsTableName;
+        }
+
+        async function fetchData(tableName, tabName = activeTab) {
             // Rate limiting: aspetta almeno 500ms tra chiamate
             const now = Date.now();
             const timeSinceLastRequest = now - lastRequestTime;
@@ -501,53 +550,62 @@
             }
             lastRequestTime = Date.now();
 
-            let container;
-            if (activeTab === 'svincolati') {
-                container = document.getElementById('auctionsContainer');
-            } else if (activeTab === 'scambi') {
-                container = document.getElementById('tradesContainer');
-            } else {
-                container = document.getElementById('proposalsContainer');
-            }
+            const container = getContainerForTab(tabName);
 
             try {
                 const url = `https://api.airtable.com/v0/${AIRTABLE_CONFIG.baseId}/${tableName}?sort[0][field]=data&sort[0][direction]=desc`;
                 const response = await fetch(url, { headers: { Authorization: `Bearer ${AIRTABLE_CONFIG.readApiKey}` } });
 
-if (response.status === 429) {
-    console.error('🚫 RATE LIMIT AIRTABLE! Grazie Califfo!');
-    applyAirtableLock();
-    updateRefreshBar();
-    
-    // Calcola giorni mancanti a dicembre
-    const now = new Date();
-    const nextMonth = new Date(now.getFullYear(), now.getMonth() + 1, 1);
-    const daysLeft = Math.ceil((nextMonth - now) / (1000 * 60 * 60 * 24));
-    
-    container.innerHTML = `<div class="text-center py-12 px-4">
-        <div class="text-6xl mb-4">😭</div>
-        <p class="text-red-500 font-bold mb-4 text-2xl">Siamo spiacenti ma grazie al Califfo<br>abbiamo terminato le risorse free!</p>
-        <div class="bg-gray-700 rounded-lg p-4 mb-4 inline-block">
-            <p class="text-white text-lg">Il mercato riapre tra:</p>
-            <p class="text-green-400 font-bold text-4xl font-mono">${daysLeft} giorni</p>
-        </div>
-        <p class="text-gray-400 text-lg mb-2">(1° Dicembre 2025)</p>
-        <p class="text-gray-500 text-sm mt-4">Nel frattempo insulta il Califfo su WhatsApp 🤬</p>
-    </div>`;
-    return [];
-}
+                if (response.status === 429) {
+                    console.error('🚫 RATE LIMIT AIRTABLE! Grazie Califfo!');
+                    applyAirtableLock();
+                    updateRefreshBar();
+
+                    // Calcola giorni mancanti a dicembre
+                    const now = new Date();
+                    const nextMonth = new Date(now.getFullYear(), now.getMonth() + 1, 1);
+                    const daysLeft = Math.ceil((nextMonth - now) / (1000 * 60 * 60 * 24));
+
+                    container.innerHTML = `<div class="text-center py-12 px-4">
+                        <div class="text-6xl mb-4">😭</div>
+                        <p class="text-red-500 font-bold mb-4 text-2xl">Siamo spiacenti ma grazie al Califfo<br>abbiamo terminato le risorse free!</p>
+                        <div class="bg-gray-700 rounded-lg p-4 mb-4 inline-block">
+                            <p class="text-white text-lg">Il mercato riapre tra:</p>
+                            <p class="text-green-400 font-bold text-4xl font-mono">${daysLeft} giorni</p>
+                        </div>
+                        <p class="text-gray-400 text-lg mb-2">(1° Dicembre 2025)</p>
+                        <p class="text-gray-500 text-sm mt-4">Nel frattempo insulta il Califfo su WhatsApp 🤬</p>
+                    </div>`;
+
+                    return { records: [], blocked: true };
+                }
 
                 if (!response.ok) throw new Error(`Errore di rete: ${response.statusText}`);
                 const data = await response.json();
-                return data.records;
+                return { records: data.records, blocked: false };
             } catch (error) {
                 console.error("Errore nel recupero dati:", error);
                 container.innerHTML = `<p class="text-red-500 text-center">Impossibile caricare i dati. Riprova più tardi.</p>`;
-                return [];
+                return { records: [], blocked: true };
             }
         }
-        
-        // --- LOGICA SVINCOLATI ---
+
+        function renderTabFromRecords(tabName, records) {
+            if (tabName === 'svincolati') {
+                const openDetails = new Set();
+                document.querySelectorAll('#auctionsContainer details[open]').forEach(detail => {
+                    const card = detail.closest('[data-player]');
+                    if (card) openDetails.add(card.dataset.player);
+                });
+                const auctions = processAuctions(records);
+                renderAuctions(auctions, openDetails);
+            } else if (tabName === 'scambi') {
+                renderTrades(records);
+            } else {
+                renderProposals(records);
+            }
+        }
+// --- LOGICA SVINCOLATI ---
         function processAuctions(records) {
             const auctions = {};
             records.forEach(record => {
@@ -1018,22 +1076,12 @@ if (response.status === 429) {
             isRefreshing = true;
             updateRefreshBar();
             try {
-                if (activeTab === 'svincolati') {
-                    const openDetails = new Set();
-                    document.querySelectorAll('#auctionsContainer details[open]').forEach(detail => {
-                        const card = detail.closest('[data-player]');
-                        if (card) openDetails.add(card.dataset.player);
-                    });
-                    const records = await fetchData(AIRTABLE_CONFIG.tableName);
-                    const auctions = processAuctions(records);
-                    renderAuctions(auctions, openDetails);
-                } else if (activeTab === 'scambi') {
-                    const records = await fetchData(AIRTABLE_CONFIG.tradesTableName);
-                    renderTrades(records);
-                } else if (activeTab === 'proposti') {
-                    const records = await fetchData(AIRTABLE_CONFIG.proposalsTableName);
-                    renderProposals(records);
-                }
+                const tableName = getTableNameForTab(activeTab);
+                const res = await fetchData(tableName, activeTab);
+                if (res.blocked) return;
+
+                saveTabCache(activeTab, res.records);
+                renderTabFromRecords(activeTab, res.records);
 
                 lastSuccessfulUpdateAt = new Date();
                 lsSetNumber(LS_KEYS.lastSuccessfulUpdateAtMs, lastSuccessfulUpdateAt.getTime());
@@ -1047,11 +1095,64 @@ if (response.status === 429) {
                 updateRefreshBar();
             }
         }
-        
+
+        async function preloadAll(trigger = 'auto') {
+            if (isRefreshing) return;
+
+            const airtableLockRemaining = getAirtableLockRemainingMs();
+            if (airtableLockRemaining > 0) {
+                updateRefreshBar();
+                return;
+            }
+
+            if (trigger === 'auto') {
+                const autoRemaining = getAutoFetchCooldownRemainingMs();
+                if (autoRemaining > 0) {
+                    updateRefreshBar();
+                    return;
+                }
+            }
+
+            isRefreshing = true;
+            updateRefreshBar();
+
+            let didUpdate = false;
+            try {
+                const tabs = ['svincolati', 'scambi', 'proposti'];
+
+                for (const tabName of tabs) {
+                    const tableName = getTableNameForTab(tabName);
+                    const res = await fetchData(tableName, tabName);
+                    if (res.blocked) break;
+
+                    saveTabCache(tabName, res.records);
+                    renderTabFromRecords(tabName, res.records);
+                    didUpdate = true;
+
+                    // Se nel frattempo è stato attivato un lock (per esempio 429), interrompi.
+                    if (getAirtableLockRemainingMs() > 0) break;
+                }
+
+                if (didUpdate) {
+                    lastSuccessfulUpdateAt = new Date();
+                    lsSetNumber(LS_KEYS.lastSuccessfulUpdateAtMs, lastSuccessfulUpdateAt.getTime());
+
+                    // Dopo un fetch riuscito, blocca i reload ravvicinati (Cmd+R)
+                    lsSetNumber(LS_KEYS.autoFetchCooldownUntil, nowMs() + AUTO_FETCH_COOLDOWN_MS);
+                }
+
+                updateRefreshBar();
+            } finally {
+                isRefreshing = false;
+                updateRefreshBar();
+            }
+        }
+
         document.addEventListener('DOMContentLoaded', () => {
             lucide.createIcons();
             switchTab('scambi');
-            main('auto');
+            hydrateAllFromCache();
+            preloadAll('auto');
             updateRefreshBar();
 
             setInterval(updateManualRefreshUI, 1000);

@@ -49,10 +49,22 @@
             <p class="text-gray-400 mt-2 text-lg">Stagione 2025/2026</p>
         </header>
 
-        <div class="mb-6 flex justify-center border-b border-gray-700">
-            <button id="tab-proposti" class="tab-btn active font-semibold py-3 px-6 border-b-2 transition">PROPOSTI</button>
+        <div id="refreshBar" class="mb-6 flex flex-col md:flex-row md:items-center md:justify-between gap-3">
+            <div class="text-sm text-gray-400 text-center md:text-left">
+                Aggiornato: <span id="lastUpdated" class="font-mono text-gray-200">—</span>
+            </div>
+            <div class="flex items-center justify-center md:justify-end">
+                <button id="manualRefreshBtn" type="button" class="bg-gray-700 hover:bg-gray-600 text-white font-semibold py-2 px-4 rounded-lg transition flex items-center gap-2 disabled:opacity-50 disabled:cursor-not-allowed">
+                    <i data-lucide="refresh-cw" class="w-4 h-4"></i>
+                    Refresh
+                </button>
+            </div>
+        </div>
+
+        <div class="mb-6 flex justify-center gap-6 border-b border-gray-700">
             <button id="tab-scambi" class="tab-btn text-gray-400 font-semibold py-3 px-6 border-b-2 border-transparent hover:text-white transition">SCAMBI</button>
-            <button id="tab-svincolati" class="tab-btn text-gray-400 font-semibold py-3 px-6 border-b-2 border-transparent hover:text-white transition">SVINCOLATI</button>            
+            <button id="tab-svincolati" class="tab-btn text-gray-400 font-semibold py-3 px-6 border-b-2 border-transparent hover:text-white transition">SVINCOLATI</button>
+            <button id="tab-proposti" class="tab-btn active font-semibold py-3 px-6 border-b-2 transition">PROPOSTI</button>            
         </div>
 
         <div class="grid grid-cols-1 lg:grid-cols-3 gap-8">
@@ -232,6 +244,21 @@
         let isRefreshing = false;
         let lastRequestTime = 0;
         const MIN_REQUEST_INTERVAL = 500; // Minimo 500ms tra richieste (max 2 req/sec)
+
+        const lastUpdatedEl = document.getElementById('lastUpdated');
+        const manualRefreshBtn = document.getElementById('manualRefreshBtn');
+        let lastSuccessfulUpdateAt = null;
+
+        function updateRefreshBar() {
+            if (lastUpdatedEl) {
+                lastUpdatedEl.textContent = lastSuccessfulUpdateAt
+                    ? lastSuccessfulUpdateAt.toLocaleString('it-IT', { day: '2-digit', month: '2-digit', hour: '2-digit', minute: '2-digit' })
+                    : '—';
+            }
+            if (manualRefreshBtn) {
+                manualRefreshBtn.disabled = isRefreshing;
+            }
+        }
 
 
         // --- GESTIONE TAB ---
@@ -621,6 +648,7 @@ if (response.status === 429) {
                         ${playersHtml}
                     </div>
                 `;
+                
                 container.appendChild(card);
             });
             lucide.createIcons();
@@ -789,8 +817,19 @@ if (response.status === 429) {
                 const timeLeft = endTime - new Date();
 
                 if (timeLeft <= 0) {
-                    timerEl.textContent = "00:00:00";
-                    if (!card.classList.contains('opacity-70')) { main(); }
+                    if (card.classList.contains('opacity-70')) return;
+
+                    card.classList.add('opacity-70');
+
+                    const timerContainer = timerEl.closest('.timer-container');
+                    if (timerContainer) {
+                        const expiredHtml = card.dataset.player
+                            ? `<div class="font-bold text-lg text-white bg-green-600 rounded-lg py-2">AGGIUDICATO!</div>`
+                            : `<div class="font-bold text-lg text-white bg-blue-600 rounded-lg py-2">SCAMBIO FATTO!</div>`;
+                        timerContainer.outerHTML = expiredHtml;
+                    } else {
+                        timerEl.textContent = "00:00:00";
+                    }
                 } else {
                     timerEl.textContent = formatTimeLeft(timeLeft);
                 }
@@ -805,6 +844,7 @@ if (response.status === 429) {
             }
 
             isRefreshing = true;
+            updateRefreshBar();
             try {
                 if (activeTab === 'svincolati') {
                     const openDetails = new Set();
@@ -822,15 +862,20 @@ if (response.status === 429) {
                     const records = await fetchData(AIRTABLE_CONFIG.proposalsTableName);
                     renderProposals(records);
                 }
+
+                lastSuccessfulUpdateAt = new Date();
+                updateRefreshBar();
             } finally {
                 isRefreshing = false;
+                updateRefreshBar();
             }
         }
         
         document.addEventListener('DOMContentLoaded', () => {
             lucide.createIcons();
             switchTab('proposti');
-            setInterval(main, 30000);
+            updateRefreshBar();
+            if (manualRefreshBtn) manualRefreshBtn.addEventListener('click', () => main());
             setInterval(updateTimers, 1000);
 
             document.body.addEventListener('click', function(event) {

@@ -294,7 +294,7 @@
                 contentProposti.classList.remove('hidden');
             }
             
-            main();
+            // main();
         }
 
         // --- GESTIONE RUOLI DINAMICI ---
@@ -874,6 +874,7 @@ if (response.status === 429) {
         document.addEventListener('DOMContentLoaded', () => {
             lucide.createIcons();
             switchTab('scambi');
+            main();
             updateRefreshBar();
             if (manualRefreshBtn) manualRefreshBtn.addEventListener('click', () => main());
             setInterval(updateTimers, 1000);

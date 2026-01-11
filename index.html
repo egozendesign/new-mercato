@@ -61,8 +61,8 @@
             </div>
         </div>
 
-        <div id="refreshDisclaimer" class="mb-6 text-s text-white-500 text-center md:text-left">
-            Refresh limitato per evitare blocchi del database: attesa 30s tra i refresh, max 10 refresh ogni 10 minuti. In caso di abuso o limite API, gli aggiornamenti vengono bloccati per alcuni minuti.
+        <div id="refreshDisclaimer" class="mb-6 text-xs text-gray-500 text-center md:text-left">
+            Refresh limitato per evitare blocchi Airtable: attesa 30s tra i refresh, max 10 refresh ogni 10 minuti. In caso di abuso o limite API, gli aggiornamenti vengono bloccati per alcuni minuti.
         </div>
 
         <div class="mb-6 flex justify-center gap-6 border-b border-gray-700">
@@ -252,7 +252,6 @@
         const lastUpdatedEl = document.getElementById('lastUpdated');
         const manualRefreshBtn = document.getElementById('manualRefreshBtn');
         const manualRefreshLabel = document.getElementById('manualRefreshLabel');
-        let lastSuccessfulUpdateAt = null;
 
         // --- REFRESH GUARD (anti-spam) ---
         const REFRESH_COOLDOWN_MS = 30 * 1000;                 // 30s
@@ -262,11 +261,16 @@
         const AIRTABLE_LOCK_MAX_MS = 60 * 60 * 1000;           // cap 60 min
         const AIRTABLE_LOCK_RESET_MS = 24 * 60 * 60 * 1000;    // reset escalation after 24h
 
+        // Anti spam su Cmd+R / reload (solo trigger "auto")
+        const AUTO_FETCH_COOLDOWN_MS = 30 * 1000;              // 30s
+
         const LS_KEYS = {
             cooldownUntil: 'refresh_cooldown_until',
             quotaEvents: 'refresh_quota_events',
             airtableLockUntil: 'airtable_lock_until',
-            airtableLockStrikes: 'airtable_lock_strikes'
+            airtableLockStrikes: 'airtable_lock_strikes',
+            autoFetchCooldownUntil: 'auto_fetch_cooldown_until',
+            lastSuccessfulUpdateAtMs: 'last_successful_update_at_ms'
         };
 
         function lsGetNumber(key, fallback = 0) {
@@ -293,6 +297,11 @@
 
         function getAirtableLockRemainingMs() {
             const until = lsGetNumber(LS_KEYS.airtableLockUntil, 0);
+            return Math.max(0, until - nowMs());
+        }
+
+        function getAutoFetchCooldownRemainingMs() {
+            const until = lsGetNumber(LS_KEYS.autoFetchCooldownUntil, 0);
             return Math.max(0, until - nowMs());
         }
 
@@ -385,6 +394,10 @@
             }
         }
 
+        // Persistenza lastUpdated (così non torna a "—" dopo un reload bloccato)
+        let lastSuccessfulUpdateAt = null;
+        const storedLastUpdate = lsGetNumber(LS_KEYS.lastSuccessfulUpdateAtMs, 0);
+        if (storedLastUpdate > 0) lastSuccessfulUpdateAt = new Date(storedLastUpdate);
 
         function updateRefreshBar() {
             if (lastUpdatedEl) {
@@ -394,7 +407,6 @@
             }
             updateManualRefreshUI();
         }
-
 
         // --- GESTIONE TAB ---
         tabSvincolati.addEventListener('click', () => switchTab('svincolati'));
@@ -524,7 +536,6 @@ if (response.status === 429) {
     </div>`;
     return [];
 }
-
 
                 if (!response.ok) throw new Error(`Errore di rete: ${response.statusText}`);
                 const data = await response.json();
@@ -986,6 +997,14 @@ if (response.status === 429) {
                 return;
             }
 
+            if (trigger === 'auto') {
+                const autoRemaining = getAutoFetchCooldownRemainingMs();
+                if (autoRemaining > 0) {
+                    updateRefreshBar();
+                    return;
+                }
+            }
+
             if (trigger === 'manual') {
                 const block = getManualRefreshBlock();
                 if (block.blocked) {
@@ -1017,6 +1036,11 @@ if (response.status === 429) {
                 }
 
                 lastSuccessfulUpdateAt = new Date();
+                lsSetNumber(LS_KEYS.lastSuccessfulUpdateAtMs, lastSuccessfulUpdateAt.getTime());
+
+                // Dopo un fetch riuscito, blocca i reload ravvicinati (Cmd+R)
+                lsSetNumber(LS_KEYS.autoFetchCooldownUntil, nowMs() + AUTO_FETCH_COOLDOWN_MS);
+
                 updateRefreshBar();
             } finally {
                 isRefreshing = false;
@@ -1029,6 +1053,7 @@ if (response.status === 429) {
             switchTab('scambi');
             main('auto');
             updateRefreshBar();
+
             setInterval(updateManualRefreshUI, 1000);
 
             if (manualRefreshBtn) manualRefreshBtn.addEventListener('click', () => main('manual'));
